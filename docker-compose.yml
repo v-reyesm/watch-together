@@ -1,0 +1,15 @@
+# WatchTogether app – no local DB. Provide DATABASE_URL via .env or when running.
+# Example: echo "DATABASE_URL=postgresql://user:pass@host:5432/db" > .env
+version: "3.8"
+
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=${DATABASE_URL}
+    env_file:
+      - .env
+    restart: unless-stopped

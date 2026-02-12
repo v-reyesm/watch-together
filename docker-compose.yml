@@ -1,15 +1,49 @@
-# WatchTogether app – no local DB. Provide DATABASE_URL via .env or when running.
-# Example: echo "DATABASE_URL=postgresql://user:pass@host:5432/db" > .env
 version: "3.8"
 
 services:
-  app:
+  frontend:
     build: .
     ports:
       - "3000:3000"
     environment:
       - NODE_ENV=production
-      - DATABASE_URL=${DATABASE_URL}
-    env_file:
-      - .env
+      - DATABASE_URL=postgresql://watchtogether:watchtogether@postgres:5432/watchtogether
+    depends_on:
+      postgres:
+        condition: service_healthy
     restart: unless-stopped
+
+  backend:
+    build:
+      context: ./src/api
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - NODE_ENV=production
+      - PORT=8080
+      - DATABASE_URL=postgresql://watchtogether:watchtogether@postgres:5432/watchtogether
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=watchtogether
+      - POSTGRES_USER=watchtogether
+      - POSTGRES_PASSWORD=watchtogether
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U watchtogether -d watchtogether"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  postgres_data:

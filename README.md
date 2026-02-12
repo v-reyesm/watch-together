@@ -83,7 +83,11 @@ pnpm --filter watch-together-backend run build
 
 ## Docker
 
-The provided Docker setup builds and serves the frontend app.
+The Docker Compose setup runs three services together:
+
+- `frontend` (Next.js) on port `3000`
+- `backend` (NestJS) on port `8080`
+- `postgres` on port `5432`
 
 ```bash
 docker compose up --build
@@ -91,5 +95,5 @@ docker compose up --build
 
 Notes:
 
-- Container exposes port `3000`
-- `docker-compose.yml` expects `DATABASE_URL` from `.env` or environment
+- Postgres data is persisted in the `postgres_data` volume.
+- `DATABASE_URL` is wired to the `postgres` service for both frontend and backend containers.

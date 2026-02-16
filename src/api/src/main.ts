@@ -9,7 +9,7 @@ async function bootstrap() {
   app.enableCors();
   
   const openApiConfig = new DocumentBuilder()
-    .setTitle('My API')
+    .setTitle('Wath Together API')
     .setDescription('API reference')
     .setVersion('1.0')
     .addBearerAuth()

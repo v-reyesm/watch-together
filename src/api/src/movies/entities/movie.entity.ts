@@ -1,42 +1,11 @@
-import { Column, CreateDateColumn, UpdateDateColumn, Entity, PrimaryGeneratedColumn } from "typeorm";
+import { Column, Entity } from "typeorm";
+import { Media } from "src/media/entities/media.entity";
 
 @Entity()
-export class Movie {
-    @PrimaryGeneratedColumn()
-    id: number;
-
+export class Movie extends Media {
     @Column()
-    title: string;
-
-    @Column()
-    translatedTitle: string;
-
-    @Column()
-    releaseDate: Date;
+    director: string;
 
     @Column()
     runtimeInMinutes: number;
-
-    @Column()
-    posterUrl: string;
-
-    @Column()
-    imdbId: string;
-
-    @Column()
-    tmdbId: number;
-
-    @Column()
-    overview: string;
-
-    @CreateDateColumn()
-    createdAt: Date;
-    
-    @UpdateDateColumn()
-    updatedAt: Date;
-
 }
-
-
-
-

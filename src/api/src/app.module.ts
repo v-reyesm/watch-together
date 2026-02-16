@@ -5,9 +5,11 @@ import { HealthcheckController } from './healthcheck.controller';
 import { HealthController } from './health/health.controller';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { MoviesModule } from './movies/movies.module';
+import { MediaModule } from './media/media.module';
 import { StreamingProvidersModule } from './streaming-providers/streaming-providers.module';
 import { AppDataSource } from './db/data-source';
+import { MoviesModule } from './movies/movies.module';
+import { TvSeriesModule } from './tv-series/tv-series.module';
 
 @Module({
   imports: [
@@ -16,8 +18,10 @@ import { AppDataSource } from './db/data-source';
       ...AppDataSource.options,
       autoLoadEntities: true,
     }),
-    MoviesModule,
+    MediaModule,
     StreamingProvidersModule,
+    MoviesModule,
+    TvSeriesModule,
   ],
   controllers: [AppController, HealthcheckController, HealthController],
   providers: [AppService],

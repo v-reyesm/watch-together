@@ -1,7 +1,7 @@
 import { Media } from "../../media/entities/media.entity";
 import { Column, Entity } from "typeorm";
 
-@Entity()
+@Entity({ name: "tv_series" })
 export class TvSerie extends Media {
     @Column()
     numberOfSeasons: number;

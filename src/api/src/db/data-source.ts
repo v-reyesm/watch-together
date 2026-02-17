@@ -8,6 +8,11 @@ import { Movie } from '../movies/entities/movie.entity';
 import { TvSerie } from '../tv-series/entities/tv-serie.entity';
 import { Media } from '../media/entities/media.entity';
 import { StreamingProvider } from '../streaming-providers/entities/streaming-provider.entity';
+import { User } from '../users/entities/user.entity';
+import { WatchList } from '../watch-list/entities/watch-list.entity';
+import { WatchListMember } from '../watch-list/entities/watch-list-member.entity';
+import { WatchEvent } from '../watch-list/entities/watch-event.entity';
+import { Invite } from '../invites/entities/invite.entity';
 
 // Debug: print database environment variables (mask password)
 const { DB_HOST, DB_PORT, DB_USERNAME, DB_PASSWORD, DB_NAME } = process.env;
@@ -28,7 +33,7 @@ export const AppDataSource = new DataSource({
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
   synchronize: false,
-  entities: [Movie, TvSerie, Media, StreamingProvider],
+  entities: [Movie, TvSerie, Media, StreamingProvider, User, WatchList, WatchListMember, WatchEvent, Invite],
   migrations: [path.join(__dirname, 'migrations', '*.{ts,js}').replace(/\\/g, '/')],
   migrationsRun: false,
 });

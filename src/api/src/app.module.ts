@@ -13,6 +13,7 @@ import { TvSeriesModule } from './tv-series/tv-series.module';
 import { WatchListModule } from './watch-list/watch-list.module';
 import { UsersModule } from './users/users.module';
 import { InvitesModule } from './invites/invites.module';
+import { ProvidersModule } from './providers/providers.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { InvitesModule } from './invites/invites.module';
     WatchListModule,
     UsersModule,
     InvitesModule,
+    ProvidersModule,
   ],
   controllers: [AppController, HealthcheckController, HealthController],
   providers: [AppService],

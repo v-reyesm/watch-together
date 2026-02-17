@@ -1,7 +1,13 @@
 import { DataSource } from 'typeorm';
 import * as dotenv from 'dotenv';
+import * as path from 'path';
 
 dotenv.config();
+
+import { Movie } from '../movies/entities/movie.entity';
+import { TvSerie } from '../tv-series/entities/tv-serie.entity';
+import { Media } from '../media/entities/media.entity';
+import { StreamingProvider } from '../streaming-providers/entities/streaming-provider.entity';
 
 // Debug: print database environment variables (mask password)
 const { DB_HOST, DB_PORT, DB_USERNAME, DB_PASSWORD, DB_NAME } = process.env;
@@ -21,8 +27,8 @@ export const AppDataSource = new DataSource({
   username: process.env.DB_USERNAME,
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
-  // Include both compiled JS (for production) and TS (for CLI during development)
-  entities: [__dirname + '/../**/*.entity{.ts,.js}'],
-  migrations: [__dirname + '/migrations/*{.ts,.js}'],
-  migrationsRun: true,
+  synchronize: false,
+  entities: [Movie, TvSerie, Media, StreamingProvider],
+  migrations: [path.join(__dirname, 'migrations', '*.{ts,js}').replace(/\\/g, '/')],
+  migrationsRun: false,
 });

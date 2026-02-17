@@ -1,4 +1,4 @@
-import { StreamingProvider } from "src/streaming-providers/entities/streaming-provider.entity";
+import { StreamingProvider } from "../../streaming-providers/entities/streaming-provider.entity";
 import { Column, CreateDateColumn, UpdateDateColumn, Entity, PrimaryGeneratedColumn, ManyToMany, JoinTable } from "typeorm";
 
 @Entity()
@@ -17,7 +17,7 @@ export class Media {
 
     @Column()
     posterUrl: string;
-    
+
     @Column()
     overview: string;
 
@@ -29,16 +29,16 @@ export class Media {
 
     @Column()
     rating?: number;
-    
+
     @Column()
     tmdbId?: number;
-    
+
     @Column()
     imdbId?: string;
 
     @CreateDateColumn()
     createdAt: Date;
-    
+
     @UpdateDateColumn()
     updatedAt: Date;
 

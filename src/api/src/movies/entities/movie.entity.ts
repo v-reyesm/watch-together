@@ -1,5 +1,5 @@
 import { Column, Entity } from "typeorm";
-import { Media } from "src/media/entities/media.entity";
+import { Media } from "../../media/entities/media.entity";
 
 @Entity()
 export class Movie extends Media {

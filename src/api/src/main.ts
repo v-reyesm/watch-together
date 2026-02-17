@@ -7,7 +7,7 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.setGlobalPrefix('api');
   app.enableCors();
-  
+
   const openApiConfig = new DocumentBuilder()
     .setTitle('Wath Together API')
     .setDescription('API reference')
@@ -19,11 +19,13 @@ async function bootstrap() {
 
   app.use('/api/docs',
     apiReference({
-      url: '/openapi.json',
+      spec: {
+        content: document,
+      },
       title: 'API Reference',
       layout: 'modern',
-      defaultHttpClient: { targetKey: "shell", clientKey: "curl" },
-    })
+      defaultHttpClient: { targetKey: 'shell', clientKey: 'curl' },
+    }),
   );
 
   app.use('/openapi.json', (_req, res) => res.json(document))

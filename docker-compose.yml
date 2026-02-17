@@ -17,9 +17,16 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8080:8080"
+    env_file:
+      - ./src/api/.env
     environment:
       - NODE_ENV=production
       - PORT=8080
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USERNAME=watchtogether
+      - DB_PASSWORD=watchtogether
+      - DB_NAME=watchtogether
       - DATABASE_URL=postgresql://watchtogether:watchtogether@postgres:5432/watchtogether
     depends_on:
       postgres:

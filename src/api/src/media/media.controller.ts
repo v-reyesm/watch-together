@@ -1,7 +1,6 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
 import { MediaService } from './media.service';
 import { CreateMovieDto } from './dto/create-movie.dto';
-import { UpdateMovieDto } from './dto/update-movie.dto';
 
 @Controller('media')
 export class MediaController {
@@ -23,7 +22,7 @@ export class MediaController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateMovieDto: UpdateMovieDto) {
+  update(@Param('id') id: string, @Body() updateMovieDto: Partial<CreateMovieDto>) {
     return this.mediaService.update(+id, updateMovieDto);
   }
 

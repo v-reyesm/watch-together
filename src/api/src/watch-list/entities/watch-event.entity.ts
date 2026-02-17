@@ -8,7 +8,7 @@ import { Media } from "../../media/entities/media.entity";
 import { User } from "../../users/entities/user.entity";
 import { WatchList } from "./watch-list.entity";
 
-/** Record of a user marking something as watched. WT-050: context (alone vs together), linked to list. */
+/** Record of a user marking something as watched. WT-050: alone (no list) or in list context (together). */
 @Entity({ name: "watch_events" })
 export class WatchEvent {
     @PrimaryGeneratedColumn()
@@ -26,12 +26,12 @@ export class WatchEvent {
     @ManyToOne(() => Media, { onDelete: "CASCADE" })
     media: Media;
 
-    /** List context: when set, "watched together" is inferred if multiple users watched in same list. */
-    @Column()
-    watchListId: number;
+    /** Optional list context: when set, event is "on a list"; when null, "watched alone". */
+    @Column({ nullable: true })
+    watchListId: number | null;
 
     @ManyToOne(() => WatchList, { onDelete: "CASCADE" })
-    watchList: WatchList;
+    watchList: WatchList | null;
 
     @Column({ type: "timestamptz", default: () => "CURRENT_TIMESTAMP" })
     watchedAt: Date;

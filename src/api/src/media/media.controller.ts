@@ -17,7 +17,8 @@ export class MediaController {
             throw new BadRequestException('query is required and must be a non-empty string');
         }
         const pageNum = page != null ? Math.max(1, parseInt(page, 10) || 1) : 1;
-        const searchType: MediaSearchType = type === 'tv' ? 'tv' : 'movie';
+        const searchType: MediaSearchType | 'both' =
+            type === 'tv' ? 'tv' : type === 'movie' ? 'movie' : 'both';
         return this.mediaService.search(trimmed, pageNum, searchType);
     }
 }

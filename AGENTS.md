@@ -47,3 +47,4 @@ Treat these as fixed constraints. Do not suggest alternatives or “better” op
 
 ## Other considerations
 - On the API project, when a entity references another entity, it must be imported like this `import { Media } from "../../media/entities/media.entity";`, since it will work running on docker or in the cli
+- Use the project command to generate migrations and then edit them, don't generate the migration file for yourself.

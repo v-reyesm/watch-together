@@ -21,7 +21,19 @@ export class MediaService {
         this.cacheTtlDays = parseInt(process.env.SEARCH_CACHE_TTL_DAYS ?? '30', 10);
     }
 
-    async search(query: string, page: number, searchType: MediaSearchType): Promise<MediaSearchResult[]> {
+    async search(
+        query: string,
+        page: number,
+        searchType: MediaSearchType | 'both',
+    ): Promise<MediaSearchResult[]> {
+        if (searchType === 'both') {
+            const [movies, tv] = await Promise.all([
+                this.search(query, page, 'movie'),
+                this.search(query, page, 'tv'),
+            ]);
+            return [...movies, ...tv].sort((a, b) => b.rating - a.rating);
+        }
+
         const normalizedQuery = query.trim().toLowerCase();
 
         const cached = await this.cacheRepo.findOneBy({

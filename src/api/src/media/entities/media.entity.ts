@@ -13,7 +13,7 @@ export class Media {
     @Column()
     translatedTitle: string;
 
-    @Column()
+    @Column({ type: "date" })
     releaseDate: Date;
 
     @Column()

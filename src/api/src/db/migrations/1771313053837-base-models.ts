@@ -1,5 +1,10 @@
 import { MigrationInterface, QueryRunner } from "typeorm";
 
+/**
+ * Initial schema. The "genres" column (varchar) on media/movies/tv_series is later replaced
+ * by the Genre entity and ManyToMany join tables in migration CreateGenres1771481605032.
+ * Do not edit this migration if it has already run; schema is corrected by that migration.
+ */
 export class BaseModels1771313053837 implements MigrationInterface {
     name = 'BaseModels1771313053837'
 

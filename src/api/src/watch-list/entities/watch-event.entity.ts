@@ -30,7 +30,7 @@ export class WatchEvent {
     @Column({ nullable: true })
     watchListId: number | null;
 
-    @ManyToOne(() => WatchList, { onDelete: "CASCADE" })
+    @ManyToOne(() => WatchList, { onDelete: "CASCADE", nullable: true })
     watchList: WatchList | null;
 
     @Column({ type: "timestamptz", default: () => "CURRENT_TIMESTAMP" })

@@ -14,6 +14,7 @@ import { WatchListModule } from './watch-list/watch-list.module';
 import { UsersModule } from './users/users.module';
 import { InvitesModule } from './invites/invites.module';
 import { ProvidersModule } from './providers/providers.module';
+import { GenresModule } from './genres/genres.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { ProvidersModule } from './providers/providers.module';
     UsersModule,
     InvitesModule,
     ProvidersModule,
+    GenresModule,
   ],
   controllers: [AppController, HealthcheckController, HealthController],
   providers: [AppService],

@@ -1,33 +1,24 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { BadRequestException, Controller, Get, Query } from '@nestjs/common';
 import { MediaService } from './media.service';
-import { CreateMovieDto } from './dto/create-movie.dto';
+import { MediaSearchType } from '../providers/interfaces/media-provider.interface';
 
 @Controller('media')
 export class MediaController {
-  constructor(private readonly mediaService: MediaService) {}
+    constructor(private readonly mediaService: MediaService) {}
 
-  @Post()
-  create(@Body() createMovieDto: CreateMovieDto) {
-    return this.mediaService.create(createMovieDto);
-  }
-
-  @Get()
-  findAll() {
-    return this.mediaService.findAll();
-  }
-
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.mediaService.findOne(+id);
-  }
-
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateMovieDto: Partial<CreateMovieDto>) {
-    return this.mediaService.update(+id, updateMovieDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.mediaService.remove(+id);
-  }
+    @Get('search')
+    async search(
+        @Query('query') query?: string,
+        @Query('page') page?: string,
+        @Query('type') type?: string,
+    ) {
+        const trimmed = typeof query === 'string' ? query.trim() : '';
+        if (!trimmed) {
+            throw new BadRequestException('query is required and must be a non-empty string');
+        }
+        const pageNum = page != null ? Math.max(1, parseInt(page, 10) || 1) : 1;
+        const searchType: MediaSearchType | 'both' =
+            type === 'tv' ? 'tv' : type === 'movie' ? 'movie' : 'both';
+        return this.mediaService.search(trimmed, pageNum, searchType);
+    }
 }

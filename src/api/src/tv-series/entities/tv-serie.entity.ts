@@ -1,17 +1,17 @@
 import { Media } from "../../media/entities/media.entity";
 import { Column, Entity } from "typeorm";
 
-@Entity()
+@Entity({ name: "tv_series" })
 export class TvSerie extends Media {
-    @Column()
-    numberOfSeasons: number;
+    @Column({ nullable: true })
+    numberOfSeasons?: number;
 
-    @Column()
-    numberOfEpisodes: number;
+    @Column({ nullable: true })
+    numberOfEpisodes?: number;
 
-    @Column()
-    totalRuntimeInMinutes: number;
+    @Column({ nullable: true })
+    totalRuntimeInMinutes?: number;
 
-    @Column()
+    @Column({ nullable: true })
     status?: "ongoing" | "ended" | "upcoming" | "cancelled" | "unknown";
 }

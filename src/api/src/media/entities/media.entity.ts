@@ -1,3 +1,4 @@
+import { Genre } from "../../genres/entities/genre.entity";
 import { StreamingProvider } from "../../streaming-providers/entities/streaming-provider.entity";
 import { Column, CreateDateColumn, UpdateDateColumn, Entity, PrimaryGeneratedColumn, ManyToMany, JoinTable } from "typeorm";
 
@@ -12,7 +13,7 @@ export class Media {
     @Column()
     translatedTitle: string;
 
-    @Column()
+    @Column({ type: "date" })
     releaseDate: Date;
 
     @Column()
@@ -21,19 +22,20 @@ export class Media {
     @Column()
     overview: string;
 
-    @Column()
-    genres?: string;
+    @ManyToMany(() => Genre)
+    @JoinTable()
+    genres: Genre[];
 
-    @Column()
+    @Column({ nullable: true })
     originalLanguage?: string;
 
-    @Column()
+    @Column({ type: 'float', nullable: true })
     rating?: number;
 
-    @Column()
+    @Column({ nullable: true })
     tmdbId?: number;
 
-    @Column()
+    @Column({ nullable: true })
     imdbId?: string;
 
     @CreateDateColumn()

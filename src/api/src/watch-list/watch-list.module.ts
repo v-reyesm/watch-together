@@ -7,9 +7,7 @@ import { WatchListMember } from './entities/watch-list-member.entity';
 import { WatchEvent } from './entities/watch-event.entity';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([WatchList, WatchListMember, WatchEvent]),
-  ],
+  imports: [TypeOrmModule.forFeature([WatchList, WatchListMember, WatchEvent])],
   controllers: [WatchListController],
   providers: [WatchListService],
 })

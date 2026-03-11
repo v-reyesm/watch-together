@@ -8,7 +8,14 @@ describe('MediaController', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [MediaController],
-      providers: [MediaService],
+      providers: [
+        {
+          provide: MediaService,
+          useValue: {
+            search: jest.fn(),
+          },
+        },
+      ],
     }).compile();
 
     controller = module.get<MediaController>(MediaController);

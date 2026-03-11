@@ -50,8 +50,11 @@ async function bootstrap() {
     }),
   );
 
-  app.use('/openapi.json', (_req, res) => res.json(document));
+  app.use(
+    '/openapi.json',
+    (_req: unknown, res: { json: (doc: object) => void }) => res.json(document),
+  );
 
   await app.listen(process.env.PORT ?? 8080);
 }
-bootstrap();
+void bootstrap();

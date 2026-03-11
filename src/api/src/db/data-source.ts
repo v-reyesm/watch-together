@@ -18,7 +18,9 @@ import { TmdbSearchCache } from '../media/entities/tmdb-search-cache.entity';
 
 // Debug: print database environment variables (mask password)
 const { DB_HOST, DB_PORT, DB_USERNAME, DB_PASSWORD, DB_NAME } = process.env;
-const maskedPassword = DB_PASSWORD ? DB_PASSWORD.replace(/.(?=.{2})/g, '*') : undefined;
+const maskedPassword = DB_PASSWORD
+  ? DB_PASSWORD.replace(/.(?=.{2})/g, '*')
+  : undefined;
 console.log('[DEBUG] DB envs:', {
   DB_HOST,
   DB_PORT,
@@ -35,7 +37,21 @@ export const AppDataSource = new DataSource({
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
   synchronize: false,
-  entities: [Movie, TvSerie, Media, Genre, StreamingProvider, User, WatchList, WatchListMember, WatchEvent, Invite, TmdbSearchCache],
-  migrations: [path.join(__dirname, 'migrations', '*.{ts,js}').replace(/\\/g, '/')],
+  entities: [
+    Movie,
+    TvSerie,
+    Media,
+    Genre,
+    StreamingProvider,
+    User,
+    WatchList,
+    WatchListMember,
+    WatchEvent,
+    Invite,
+    TmdbSearchCache,
+  ],
+  migrations: [
+    path.join(__dirname, 'migrations', '*.{ts,js}').replace(/\\/g, '/'),
+  ],
   migrationsRun: false,
 });

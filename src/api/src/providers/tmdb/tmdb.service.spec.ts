@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { HttpService } from '@nestjs/axios';
 import { TmdbService } from './tmdb.service';
 
 describe('TmdbService', () => {
@@ -6,7 +7,15 @@ describe('TmdbService', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [TmdbService],
+      providers: [
+        TmdbService,
+        {
+          provide: HttpService,
+          useValue: {
+            get: jest.fn(),
+          },
+        },
+      ],
     }).compile();
 
     service = module.get<TmdbService>(TmdbService);

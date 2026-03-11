@@ -68,7 +68,9 @@ export class AuthService {
 
   async googleAuth(idToken: string): Promise<{ accessToken: string }> {
     const googleClientId = this.configService.get<string>('GOOGLE_CLIENT_ID');
-    let payload;
+    let payload:
+      | { sub?: string; email?: string; name?: string; picture?: string }
+      | undefined;
     try {
       const ticket = await this.googleClient.verifyIdToken({
         idToken,

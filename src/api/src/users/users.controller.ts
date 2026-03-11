@@ -5,9 +5,17 @@ import {
   NotFoundException,
   Patch,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { UsersService } from './users.service';
-import { CurrentUser, CurrentUserPayload } from '../auth/decorators/current-user.decorator';
+import {
+  CurrentUser,
+  CurrentUserPayload,
+} from '../auth/decorators/current-user.decorator';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 
 @ApiTags('Users')

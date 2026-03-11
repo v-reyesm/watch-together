@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-argument */
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { TypeOrmModule, getRepositoryToken } from '@nestjs/typeorm';
@@ -6,7 +7,7 @@ import { JwtModule, JwtService } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { APP_GUARD, Reflector } from '@nestjs/core';
 import request from 'supertest';
-import { Repository, DataSource } from 'typeorm';
+import { DataSource } from 'typeorm';
 import {
   Column,
   Entity,
@@ -140,12 +141,20 @@ describe('Auth (e2e)', () => {
     it('should reject duplicate email', async () => {
       await request(app.getHttpServer())
         .post('/api/auth/register')
-        .send({ email: 'dup@example.com', password: 'password123', name: 'Dup' })
+        .send({
+          email: 'dup@example.com',
+          password: 'password123',
+          name: 'Dup',
+        })
         .expect(201);
 
       const res = await request(app.getHttpServer())
         .post('/api/auth/register')
-        .send({ email: 'dup@example.com', password: 'password123', name: 'Dup' })
+        .send({
+          email: 'dup@example.com',
+          password: 'password123',
+          name: 'Dup',
+        })
         .expect(409);
 
       expect(res.body.message).toBeDefined();
@@ -175,13 +184,11 @@ describe('Auth (e2e)', () => {
 
   describe('POST /api/auth/login', () => {
     beforeAll(async () => {
-      await request(app.getHttpServer())
-        .post('/api/auth/register')
-        .send({
-          email: 'login@example.com',
-          password: 'password123',
-          name: 'Login User',
-        });
+      await request(app.getHttpServer()).post('/api/auth/register').send({
+        email: 'login@example.com',
+        password: 'password123',
+        name: 'Login User',
+      });
     });
 
     it('should login with correct credentials', async () => {

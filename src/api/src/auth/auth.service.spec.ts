@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-return, @typescript-eslint/require-await */
 import { Test, TestingModule } from '@nestjs/testing';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
@@ -99,7 +100,10 @@ describe('AuthService', () => {
       });
 
       const createCall = usersService.createUser!.mock.calls[0][0];
-      const isHashed = await bcrypt.compare('password123', createCall.passwordHash);
+      const isHashed = await bcrypt.compare(
+        'password123',
+        createCall.passwordHash,
+      );
       expect(isHashed).toBe(true);
     });
   });
@@ -185,9 +189,9 @@ describe('AuthService', () => {
 
   describe('googleAuth', () => {
     it('should throw UnauthorizedException for invalid idToken', async () => {
-      await expect(
-        authService.googleAuth('invalid-token'),
-      ).rejects.toThrow(UnauthorizedException);
+      await expect(authService.googleAuth('invalid-token')).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
   });
 });

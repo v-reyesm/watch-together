@@ -61,7 +61,7 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm run test -- --no-cache --forceExit
+      - run: npx jest --no-cache --forceExit
 
   api-e2e-tests:
     name: "API · E2E tests"
@@ -81,7 +81,7 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm run test:e2e -- --no-cache --forceExit
+      - run: npx jest --config ./test/jest-e2e.json --no-cache --forceExit
 
   api-build:
     name: "API · Build"

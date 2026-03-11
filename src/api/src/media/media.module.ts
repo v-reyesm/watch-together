@@ -8,12 +8,12 @@ import { TvSerie } from '../tv-series/entities/tv-serie.entity';
 import { TmdbSearchCache } from './entities/tmdb-search-cache.entity';
 
 @Module({
-    imports: [
-        TypeOrmModule.forFeature([Movie, TvSerie, TmdbSearchCache]),
-        ProvidersModule,
-    ],
-    controllers: [MediaController],
-    providers: [MediaService],
-    exports: [MediaService],
+  imports: [
+    TypeOrmModule.forFeature([Movie, TvSerie, TmdbSearchCache]),
+    ProvidersModule,
+  ],
+  controllers: [MediaController],
+  providers: [MediaService],
+  exports: [MediaService],
 })
 export class MediaModule {}

@@ -31,29 +31,32 @@ async function bootstrap() {
   const reflector = app.get(Reflector);
   app.useGlobalGuards(new GlobalJwtAuthGuard(reflector));
 
-  const openApiConfig = new DocumentBuilder()
-    .setTitle('WatchTogether API')
-    .setDescription('API reference')
-    .setVersion('1.0')
-    .addBearerAuth()
-    .build();
+  if (process.env.NODE_ENV !== 'production') {
+    const openApiConfig = new DocumentBuilder()
+      .setTitle('WatchTogether API')
+      .setDescription('API reference')
+      .setVersion('1.0')
+      .addBearerAuth()
+      .build();
 
-  const document = SwaggerModule.createDocument(app, openApiConfig);
+    const document = SwaggerModule.createDocument(app, openApiConfig);
 
-  app.use(
-    '/api/docs',
-    apiReference({
-      spec: { content: document },
-      title: 'API Reference',
-      layout: 'modern',
-      defaultHttpClient: { targetKey: 'shell', clientKey: 'curl' },
-    }),
-  );
+    app.use(
+      '/api/docs',
+      apiReference({
+        spec: { content: document },
+        title: 'API Reference',
+        layout: 'modern',
+        defaultHttpClient: { targetKey: 'shell', clientKey: 'curl' },
+      }),
+    );
 
-  app.use(
-    '/openapi.json',
-    (_req: unknown, res: { json: (doc: object) => void }) => res.json(document),
-  );
+    app.use(
+      '/openapi.json',
+      (_req: unknown, res: { json: (doc: object) => void }) =>
+        res.json(document),
+    );
+  }
 
   await app.listen(process.env.PORT ?? 8080);
 }

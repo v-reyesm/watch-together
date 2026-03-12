@@ -6,6 +6,7 @@ import Link from "next/link";
 import { GoogleLogin } from "@react-oauth/google";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { hasGoogleClientId } from "@/components/auth/google-provider";
 import { useAuth } from "@/lib/auth";
 import { apiFetch } from "@/lib/api";
 
@@ -41,7 +42,9 @@ export default function SignInPage() {
     setLoading(false);
   }
 
-  async function handleGoogleSuccess(credentialResponse: { credential?: string }) {
+  async function handleGoogleSuccess(credentialResponse: {
+    credential?: string;
+  }) {
     if (!credentialResponse.credential) {
       setError("No se pudo obtener el token de Google");
       return;
@@ -118,32 +121,37 @@ export default function SignInPage() {
             </Button>
           </form>
 
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background text-muted-foreground px-2">
-                o continúa con
-              </span>
-            </div>
-          </div>
+          {hasGoogleClientId ? (
+            <>
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-background text-muted-foreground px-2">
+                    o continúa con
+                  </span>
+                </div>
+              </div>
 
-          <div className="flex justify-center">
-            <GoogleLogin
-              onSuccess={handleGoogleSuccess}
-              onError={() =>
-                setError("Error al iniciar sesión con Google")
-              }
-              text="signin_with"
-              shape="rectangular"
-              width={320}
-            />
-          </div>
+              <div className="flex justify-center">
+                <GoogleLogin
+                  onSuccess={handleGoogleSuccess}
+                  onError={() => setError("Error al iniciar sesión con Google")}
+                  text="signin_with"
+                  shape="rectangular"
+                  width={320}
+                />
+              </div>
+            </>
+          ) : null}
 
           <p className="text-muted-foreground text-center text-sm">
             ¿No tienes cuenta?{" "}
-            <Link href="/register" className="text-primary underline-offset-4 hover:underline">
+            <Link
+              href="/register"
+              className="text-primary underline-offset-4 hover:underline"
+            >
               Regístrate
             </Link>
           </p>

@@ -5,7 +5,7 @@ import { TypeOrmModule, getRepositoryToken } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
 import { JwtModule, JwtService } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
-import { APP_GUARD, Reflector } from '@nestjs/core';
+import { APP_GUARD } from '@nestjs/core';
 import request from 'supertest';
 import { DataSource } from 'typeorm';
 import {
@@ -111,9 +111,6 @@ describe('Auth (e2e)', () => {
       }),
     );
     app.useGlobalFilters(new GlobalExceptionFilter());
-
-    const reflector = app.get(Reflector);
-    app.useGlobalGuards(new GlobalJwtAuthGuard(reflector));
 
     jwtService = moduleFixture.get<JwtService>(JwtService);
     await app.init();

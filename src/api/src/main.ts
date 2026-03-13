@@ -1,10 +1,9 @@
-import { NestFactory, Reflector } from '@nestjs/core';
+import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { apiReference } from '@scalar/nestjs-api-reference';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
-import { GlobalJwtAuthGuard } from './auth/guards/global-jwt-auth.guard';
 import { GlobalExceptionFilter } from './common/filters/http-exception.filter';
 
 async function bootstrap() {
@@ -27,9 +26,6 @@ async function bootstrap() {
   );
 
   app.useGlobalFilters(new GlobalExceptionFilter());
-
-  const reflector = app.get(Reflector);
-  app.useGlobalGuards(new GlobalJwtAuthGuard(reflector));
 
   if (process.env.NODE_ENV !== 'production') {
     const openApiConfig = new DocumentBuilder()

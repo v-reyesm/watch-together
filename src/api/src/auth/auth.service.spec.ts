@@ -12,6 +12,10 @@ describe('AuthService', () => {
   let usersService: Partial<Record<keyof UsersService, jest.Mock>>;
   let jwtService: Partial<Record<keyof JwtService, jest.Mock>>;
 
+  type GoogleClientMock = {
+    verifyIdToken: jest.Mock<Promise<{ getPayload: () => unknown }>, [unknown]>;
+  };
+
   function mockVerifyIdToken(payload: {
     sub?: string;
     email?: string;
@@ -19,13 +23,11 @@ describe('AuthService', () => {
     name?: string;
     picture?: string;
   }) {
-    const googleClient = authService as AuthService & {
-      googleClient: {
-        verifyIdToken: (args: unknown) => unknown;
-      };
-    };
+    const googleClient = (
+      authService as unknown as { googleClient: GoogleClientMock }
+    ).googleClient;
 
-    jest.spyOn(googleClient.googleClient, 'verifyIdToken').mockResolvedValue({
+    jest.spyOn(googleClient, 'verifyIdToken').mockResolvedValue({
       getPayload: () => payload,
     } as never);
   }

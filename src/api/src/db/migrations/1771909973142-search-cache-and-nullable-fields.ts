@@ -1,8 +1,6 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class SearchCacheAndNullableFields1771909973142
-  implements MigrationInterface
-{
+export class SearchCacheAndNullableFields1771909973142 implements MigrationInterface {
   name = 'SearchCacheAndNullableFields1771909973142';
 
   public async up(queryRunner: QueryRunner): Promise<void> {

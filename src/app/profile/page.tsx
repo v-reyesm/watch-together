@@ -94,6 +94,7 @@ export default function ProfilePage() {
               {saving ? "Guardando..." : saved ? "Guardado ✓" : "Guardar"}
             </Button>
             <Button
+              type="button"
               variant="ghost"
               className="text-muted-foreground justify-start"
               onClick={signOut}

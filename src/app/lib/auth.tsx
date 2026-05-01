@@ -82,7 +82,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     sessionStorage.removeItem(TOKEN_KEY);
     setToken(null);
     setUser(null);
-    router.push("/sign-in");
+    router.replace("/sign-in");
   }, [router]);
 
   const value = useMemo(

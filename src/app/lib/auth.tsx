@@ -8,7 +8,7 @@ import {
   useMemo,
   useState,
 } from "react";
-import { useRouter } from "next/navigation";
+import { redirectTo } from "@/lib/navigation";
 
 interface User {
   id: number;
@@ -33,7 +33,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const router = useRouter();
 
   const fetchUser = useCallback(async (accessToken: string) => {
     try {
@@ -51,10 +50,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
+    let cancelled = false;
     const stored = sessionStorage.getItem(TOKEN_KEY);
     if (stored) {
       setToken(stored);
       fetchUser(stored).then((u) => {
+        if (cancelled) {
+          return;
+        }
+
+        const currentToken = sessionStorage.getItem(TOKEN_KEY);
+        if (currentToken !== stored) {
+          setIsLoading(false);
+          return;
+        }
+
         if (u) {
           setUser(u);
         } else {
@@ -66,6 +76,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } else {
       setIsLoading(false);
     }
+
+    return () => {
+      cancelled = true;
+    };
   }, [fetchUser]);
 
   const signIn = useCallback(
@@ -82,8 +96,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     sessionStorage.removeItem(TOKEN_KEY);
     setToken(null);
     setUser(null);
-    router.replace("/sign-in");
-  }, [router]);
+    setIsLoading(false);
+    redirectTo("/sign-in");
+  }, []);
 
   const value = useMemo(
     () => ({ user, token, isLoading, signIn, signOut }),

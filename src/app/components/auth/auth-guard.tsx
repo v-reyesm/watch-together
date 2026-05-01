@@ -36,7 +36,13 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   }
 
   if (!user && !isPublic) {
-    return null;
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="text-muted-foreground text-sm">
+          Redirigiendo al inicio de sesión...
+        </div>
+      </div>
+    );
   }
 
   return <>{children}</>;

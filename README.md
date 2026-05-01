@@ -67,6 +67,9 @@ Default local ports:
 - `pnpm build` - build frontend
 - `pnpm start` - run frontend in production mode
 - `pnpm lint` - lint frontend
+- `pnpm test:e2e:web` - run Playwright browser tests
+- `pnpm test:e2e:web:headed` - run Playwright in headed mode
+- `pnpm test:e2e:web:ui` - open the Playwright UI runner
 
 ## Backend (NestJS)
 
@@ -80,6 +83,27 @@ pnpm --filter watch-together-backend run test
 pnpm --filter watch-together-backend run test:e2e
 pnpm --filter watch-together-backend run build
 ```
+
+## Frontend E2E
+
+Playwright is configured for browser end-to-end tests under `tests/e2e`, grouped by domain.
+
+Current structure:
+
+```text
+tests/
+└── e2e/
+    └── auth/
+        └── auth.spec.ts
+```
+
+The initial `auth` flow covers:
+
+- guest redirect from a protected route to `/sign-in`
+- sign-in through the web form
+- sign-out from the profile page
+
+These browser tests mock API responses in the page layer, so they are fast and stable while the backend evolves independently.
 
 ## Docker
 

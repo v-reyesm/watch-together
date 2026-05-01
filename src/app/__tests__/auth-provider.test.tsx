@@ -5,10 +5,10 @@ import React from "react";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import "@testing-library/jest-dom";
 
-const mockReplace = jest.fn();
+const mockRedirectTo = jest.fn();
 
-jest.mock("next/navigation", () => ({
-  useRouter: () => ({ replace: mockReplace, push: jest.fn() }),
+jest.mock("@/lib/navigation", () => ({
+  redirectTo: (path: string) => mockRedirectTo(path),
 }));
 
 import { AuthProvider, useAuth } from "../lib/auth";
@@ -55,6 +55,6 @@ describe("AuthProvider", () => {
     fireEvent.click(screen.getByRole("button", { name: "Cerrar sesión" }));
 
     expect(sessionStorage.getItem("wt_token")).toBeNull();
-    expect(mockReplace).toHaveBeenCalledWith("/sign-in");
+    expect(mockRedirectTo).toHaveBeenCalledWith("/sign-in");
   });
 });

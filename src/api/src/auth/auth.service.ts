@@ -69,7 +69,13 @@ export class AuthService {
   async googleAuth(idToken: string): Promise<{ accessToken: string }> {
     const googleClientId = this.configService.get<string>('GOOGLE_CLIENT_ID');
     let payload:
-      | { sub?: string; email?: string; name?: string; picture?: string }
+      | {
+          sub?: string;
+          email?: string;
+          email_verified?: boolean;
+          name?: string;
+          picture?: string;
+        }
       | undefined;
     try {
       const ticket = await this.googleClient.verifyIdToken({
@@ -82,7 +88,12 @@ export class AuthService {
       throw new UnauthorizedException('Token de Google inválido');
     }
 
-    if (!payload || !payload.sub || !payload.email) {
+    if (
+      !payload ||
+      !payload.sub ||
+      !payload.email ||
+      payload.email_verified !== true
+    ) {
       throw new UnauthorizedException('Token de Google inválido');
     }
 

@@ -18,6 +18,7 @@ import { UsersModule } from './users/users.module';
 import { InvitesModule } from './invites/invites.module';
 import { ProvidersModule } from './providers/providers.module';
 import { GenresModule } from './genres/genres.module';
+import { GlobalJwtAuthGuard } from './auth/guards/global-jwt-auth.guard';
 
 @Module({
   imports: [
@@ -52,6 +53,10 @@ import { GenresModule } from './genres/genres.module';
   controllers: [AppController, HealthcheckController, HealthController],
   providers: [
     AppService,
+    {
+      provide: APP_GUARD,
+      useClass: GlobalJwtAuthGuard,
+    },
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,

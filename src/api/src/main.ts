@@ -1,10 +1,9 @@
-import { NestFactory, Reflector } from '@nestjs/core';
+import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { apiReference } from '@scalar/nestjs-api-reference';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
-import { GlobalJwtAuthGuard } from './auth/guards/global-jwt-auth.guard';
 import { GlobalExceptionFilter } from './common/filters/http-exception.filter';
 
 async function bootstrap() {
@@ -28,32 +27,32 @@ async function bootstrap() {
 
   app.useGlobalFilters(new GlobalExceptionFilter());
 
-  const reflector = app.get(Reflector);
-  app.useGlobalGuards(new GlobalJwtAuthGuard(reflector));
+  if (process.env.NODE_ENV !== 'production') {
+    const openApiConfig = new DocumentBuilder()
+      .setTitle('WatchTogether API')
+      .setDescription('API reference')
+      .setVersion('1.0')
+      .addBearerAuth()
+      .build();
 
-  const openApiConfig = new DocumentBuilder()
-    .setTitle('WatchTogether API')
-    .setDescription('API reference')
-    .setVersion('1.0')
-    .addBearerAuth()
-    .build();
+    const document = SwaggerModule.createDocument(app, openApiConfig);
 
-  const document = SwaggerModule.createDocument(app, openApiConfig);
+    app.use(
+      '/api/docs',
+      apiReference({
+        spec: { content: document },
+        title: 'API Reference',
+        layout: 'modern',
+        defaultHttpClient: { targetKey: 'shell', clientKey: 'curl' },
+      }),
+    );
 
-  app.use(
-    '/api/docs',
-    apiReference({
-      spec: { content: document },
-      title: 'API Reference',
-      layout: 'modern',
-      defaultHttpClient: { targetKey: 'shell', clientKey: 'curl' },
-    }),
-  );
-
-  app.use(
-    '/openapi.json',
-    (_req: unknown, res: { json: (doc: object) => void }) => res.json(document),
-  );
+    app.use(
+      '/openapi.json',
+      (_req: unknown, res: { json: (doc: object) => void }) =>
+        res.json(document),
+    );
+  }
 
   await app.listen(process.env.PORT ?? 8080);
 }

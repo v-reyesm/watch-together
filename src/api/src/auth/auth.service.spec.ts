@@ -12,6 +12,26 @@ describe('AuthService', () => {
   let usersService: Partial<Record<keyof UsersService, jest.Mock>>;
   let jwtService: Partial<Record<keyof JwtService, jest.Mock>>;
 
+  type GoogleClientMock = {
+    verifyIdToken: jest.Mock<Promise<{ getPayload: () => unknown }>, [unknown]>;
+  };
+
+  function mockVerifyIdToken(payload: {
+    sub?: string;
+    email?: string;
+    email_verified?: boolean;
+    name?: string;
+    picture?: string;
+  }) {
+    const googleClient = (
+      authService as unknown as { googleClient: GoogleClientMock }
+    ).googleClient;
+
+    jest.spyOn(googleClient, 'verifyIdToken').mockResolvedValue({
+      getPayload: () => payload,
+    } as never);
+  }
+
   beforeEach(async () => {
     usersService = {
       findByEmail: jest.fn(),
@@ -188,6 +208,44 @@ describe('AuthService', () => {
   });
 
   describe('googleAuth', () => {
+    it('should reject Google tokens with unverified email', async () => {
+      mockVerifyIdToken({
+        sub: 'google-user-1',
+        email: 'test@example.com',
+        email_verified: false,
+        name: 'Test User',
+      });
+
+      await expect(authService.googleAuth('google-token')).rejects.toThrow(
+        UnauthorizedException,
+      );
+      expect(usersService.findOrCreateByGoogle).not.toHaveBeenCalled();
+    });
+
+    it('should create or reuse user for verified Google token', async () => {
+      mockVerifyIdToken({
+        sub: 'google-user-1',
+        email: 'test@example.com',
+        email_verified: true,
+        name: 'Test User',
+        picture: 'https://example.com/avatar.jpg',
+      });
+      usersService.findOrCreateByGoogle!.mockResolvedValue({
+        id: 1,
+        email: 'test@example.com',
+      });
+
+      const result = await authService.googleAuth('google-token');
+
+      expect(result).toEqual({ accessToken: 'mock-jwt-token' });
+      expect(usersService.findOrCreateByGoogle).toHaveBeenCalledWith({
+        googleId: 'google-user-1',
+        email: 'test@example.com',
+        name: 'Test User',
+        avatarUrl: 'https://example.com/avatar.jpg',
+      });
+    });
+
     it('should throw UnauthorizedException for invalid idToken', async () => {
       await expect(authService.googleAuth('invalid-token')).rejects.toThrow(
         UnauthorizedException,

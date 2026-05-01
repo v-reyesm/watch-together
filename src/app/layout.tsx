@@ -2,8 +2,10 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ColorSchemeProvider } from "@/components/color-scheme-provider";
-import { AppSidebar } from "@/components/app-sidebar";
-import { MobileBottomNav } from "@/components/mobile-bottom-nav";
+import { AuthProvider } from "@/lib/auth";
+import { GoogleProvider } from "@/components/auth/google-provider";
+import { AuthGuard } from "@/components/auth/auth-guard";
+import { AuthLayout } from "@/components/auth/auth-layout";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -18,7 +20,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "WatchTogether",
-  description: "A clean, minimal watchlist app for sharing movie & series lists with your partner or friends",
+  description:
+    "A clean, minimal watchlist app for sharing movie & series lists with your partner or friends",
 };
 
 export default function RootLayout({
@@ -27,7 +30,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="es" suppressHydrationWarning>
       <head>
         <script
           dangerouslySetInnerHTML={{
@@ -45,13 +48,13 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <ColorSchemeProvider>
-          <div className="flex min-h-screen">
-            <AppSidebar />
-            <main className="min-h-0 flex-1 overflow-auto pb-24 md:pb-0">
-              {children}
-            </main>
-            <MobileBottomNav />
-          </div>
+            <GoogleProvider>
+              <AuthProvider>
+                <AuthGuard>
+                  <AuthLayout>{children}</AuthLayout>
+                </AuthGuard>
+              </AuthProvider>
+            </GoogleProvider>
           </ColorSchemeProvider>
         </ThemeProvider>
       </body>

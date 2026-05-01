@@ -1,11 +1,11 @@
-import { Column, Entity } from "typeorm";
-import { Media } from "../../media/entities/media.entity";
+import { Column, Entity } from 'typeorm';
+import { Media } from '../../media/entities/media.entity';
 
-@Entity({ name: "movies" })
+@Entity({ name: 'movies' })
 export class Movie extends Media {
-    @Column({ nullable: true })
-    director?: string;
+  @Column({ nullable: true })
+  director?: string;
 
-    @Column({ nullable: true })
-    runtimeInMinutes?: number;
+  @Column({ nullable: true })
+  runtimeInMinutes?: number;
 }

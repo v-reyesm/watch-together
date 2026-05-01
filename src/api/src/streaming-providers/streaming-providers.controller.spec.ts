@@ -11,7 +11,9 @@ describe('StreamingProvidersController', () => {
       providers: [StreamingProvidersService],
     }).compile();
 
-    controller = module.get<StreamingProvidersController>(StreamingProvidersController);
+    controller = module.get<StreamingProvidersController>(
+      StreamingProvidersController,
+    );
   });
 
   it('should be defined', () => {

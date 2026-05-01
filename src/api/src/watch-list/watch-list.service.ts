@@ -4,7 +4,7 @@ import { UpdateWatchListDto } from './dto/update-watch-list.dto';
 
 @Injectable()
 export class WatchListService {
-  create(createWatchListDto: CreateWatchListDto) {
+  create(_createWatchListDto: CreateWatchListDto) {
     return 'This action adds a new watchList';
   }
 
@@ -16,7 +16,7 @@ export class WatchListService {
     return `This action returns a #${id} watchList`;
   }
 
-  update(id: number, updateWatchListDto: UpdateWatchListDto) {
+  update(id: number, _updateWatchListDto: UpdateWatchListDto) {
     return `This action updates a #${id} watchList`;
   }
 

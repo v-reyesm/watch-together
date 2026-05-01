@@ -1,4 +1,12 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+} from '@nestjs/common';
 import { WatchListService } from './watch-list.service';
 import { CreateWatchListDto } from './dto/create-watch-list.dto';
 import { UpdateWatchListDto } from './dto/update-watch-list.dto';
@@ -23,7 +31,10 @@ export class WatchListController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateWatchListDto: UpdateWatchListDto) {
+  update(
+    @Param('id') id: string,
+    @Body() updateWatchListDto: UpdateWatchListDto,
+  ) {
     return this.watchListService.update(+id, updateWatchListDto);
   }
 

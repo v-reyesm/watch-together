@@ -4,7 +4,7 @@ import { UpdateStreamingProviderDto } from './dto/update-streaming-provider.dto'
 
 @Injectable()
 export class StreamingProvidersService {
-  create(createStreamingProviderDto: CreateStreamingProviderDto) {
+  create(_createStreamingProviderDto: CreateStreamingProviderDto) {
     return 'This action adds a new streamingProvider';
   }
 
@@ -16,7 +16,7 @@ export class StreamingProvidersService {
     return `This action returns a #${id} streamingProvider`;
   }
 
-  update(id: number, updateStreamingProviderDto: UpdateStreamingProviderDto) {
+  update(id: number, _updateStreamingProviderDto: UpdateStreamingProviderDto) {
     return `This action updates a #${id} streamingProvider`;
   }
 

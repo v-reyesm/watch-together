@@ -246,6 +246,83 @@
   - Shows last N events.
   - Filter: alone/together.
 
+### WT-120 (MVP, P0, M): Home dashboard data endpoint for UI proposal
+- Description: Replace Home mock data with a backend-backed dashboard/list summary response.
+- Proposed endpoint(s):
+  - `GET /watch-lists/summary` or extend `GET /watch-lists` with summary fields.
+- Acceptance criteria:
+  - Returns only lists the current user belongs to.
+  - Includes list id, name, description, members, item count, pending count, watched count, and preview items.
+  - Supports the Home metrics: total shared lists and watched ratio.
+  - Enforces auth and never leaks another user's private lists.
+  - Frontend Home page has loading, empty, and error states in Spanish.
+
+### WT-121 (MVP, P0, L): List detail aggregate endpoint for proposal layout
+- Description: Implement the list detail endpoint needed by `/lists/:id` so the current proposal layout can render real list data.
+- Proposed endpoint(s):
+  - `GET /watch-lists/:id`
+- Acceptance criteria:
+  - Returns list metadata, members, item rows, and per-item watched status/context.
+  - Each item includes provider name, provider id, title, year, media type, poster URL, genres/summary where available, and current MVP watch state.
+  - Does not expose ranking/voting fields in MVP responses except behind clearly named Post-MVP placeholders if needed.
+  - Returns 403 for non-members and 404 only when appropriate.
+  - Frontend can remove the `sampleLists`/`sampleItems` dependency from the list detail screen.
+
+### WT-122 (MVP, P0, M): List item mutation endpoints
+- Description: Support adding/removing media from a shared list from the Search and List views.
+- Proposed endpoint(s):
+  - `POST /watch-lists/:id/items`
+  - `DELETE /watch-lists/:id/items/:itemId`
+- Acceptance criteria:
+  - Add accepts provider name + provider id and stores normalized media metadata from backend provider data.
+  - Enforces dedupe per list by provider name + provider id.
+  - Remove is permission-checked and returns a Spanish-friendly conflict/error when needed.
+  - Search UI can add to a selected list without the TMDB key reaching the browser.
+
+### WT-123 (MVP, P0, M): Watch-state endpoints for list items
+- Description: Power the proposal UI controls for "marcar vista" and watched-alone/watched-together context.
+- Proposed endpoint(s):
+  - `POST /watch-lists/:id/items/:itemId/watch-events`
+  - `DELETE /watch-lists/:id/items/:itemId/watch-events/latest` or another explicit undo endpoint from WT-053.
+- Acceptance criteria:
+  - Marking watched inside a shared list records list context and can infer "watched together" per the locked MVP rule.
+  - API response returns the updated item watch state so the UI can update without a full refresh.
+  - Undo/unwatch behavior follows the rule defined in WT-053.
+  - 401/403/404 responses are consistent and mapped to Spanish UI messages.
+
+### WT-124 (MVP, P1, M): Invite endpoints for dashboard and list header UI
+- Description: Implement the endpoints needed by the Home invite banner and List header invite action.
+- Proposed endpoint(s):
+  - `POST /watch-lists/:id/invites`
+  - `GET /watch-lists/:id/invites`
+  - `POST /invites/:token/join`
+  - `DELETE /watch-lists/:id/invites/:inviteId` or `PATCH` revoke.
+- Acceptance criteria:
+  - Owner can create and copy/share an invite link.
+  - Pending invite status can be shown and revoked.
+  - Join flow handles invalid, expired, revoked, and already-member states with Spanish messages.
+  - Email invite behavior stays aligned with WT-032.
+
+### WT-125 (MVP, P1, M): Frontend data integration for proposal UI
+- Description: Replace visual sample data on Home, Lists, Search, Profile, and Config where backend data exists.
+- Acceptance criteria:
+  - Shared typed API client methods exist for lists, items, invites, watch events, search, and profile.
+  - Core proposal screens show loading, empty, unauthorized, forbidden, and retry/error states.
+  - Existing Playwright UI smoke tests keep passing after real data wiring.
+  - Mock-only components remain limited to `Coming soon` or explicit demo/test fixtures.
+
+### WT-126 (Post-MVP, P2, L): Interest voting and ranking API for Coming soon
+- Description: Define and implement the future ranking/quick-decision feature shown in the hidden Coming soon section.
+- Proposed endpoint(s):
+  - `POST /watch-lists/:id/items/:itemId/interest-votes`
+  - `GET /watch-lists/:id/ranking`
+  - Optional quick-decision queue endpoint for one-card-at-a-time voting.
+- Acceptance criteria:
+  - Explicitly stays out of MVP unless scope is reopened.
+  - Supports per-user interest values and list-level ranking/order by match.
+  - Handles two-user primary scenario first, without blocking future multi-user lists.
+  - Does not change MVP watch-event semantics.
+
 ## Epic: Localization (Spanish First)
 
 ### WT-060 (MVP, P0, M): Spanish-first UI copy pass

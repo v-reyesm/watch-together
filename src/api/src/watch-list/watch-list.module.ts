@@ -5,9 +5,19 @@ import { WatchListController } from './watch-list.controller';
 import { WatchList } from './entities/watch-list.entity';
 import { WatchListMember } from './entities/watch-list-member.entity';
 import { WatchEvent } from './entities/watch-event.entity';
+import { Media } from '../media/entities/media.entity';
+import { User } from '../users/entities/user.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([WatchList, WatchListMember, WatchEvent])],
+  imports: [
+    TypeOrmModule.forFeature([
+      WatchList,
+      WatchListMember,
+      WatchEvent,
+      Media,
+      User,
+    ]),
+  ],
   controllers: [WatchListController],
   providers: [WatchListService],
 })

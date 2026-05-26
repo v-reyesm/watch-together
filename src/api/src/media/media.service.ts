@@ -21,6 +21,8 @@ export class MediaService {
     private readonly tvSerieRepo: Repository<TvSerie>,
     @InjectRepository(TmdbSearchCache)
     private readonly cacheRepo: Repository<TmdbSearchCache>,
+    @InjectRepository(Media)
+    private readonly mediaRepo: Repository<Media>,
     private readonly tmdbService: TmdbService,
   ) {
     this.cacheTtlDays = parseInt(process.env.SEARCH_CACHE_TTL_DAYS ?? '30', 10);
@@ -96,6 +98,7 @@ export class MediaService {
 
     for (const r of results) {
       const entity = await this.findOrCreate(r, searchType);
+      await this.findOrCreateBaseMedia(r, searchType);
       mediaIds.push(entity.id);
     }
 
@@ -125,6 +128,9 @@ export class MediaService {
       originalLanguage: r.originalLanguage,
       rating: r.rating,
       tmdbId: r.id,
+      providerName: 'tmdb',
+      providerId: r.id,
+      mediaType: 'movie',
     });
     return this.movieRepo.save(movie);
   }
@@ -142,8 +148,38 @@ export class MediaService {
       originalLanguage: r.originalLanguage,
       rating: r.rating,
       tmdbId: r.id,
+      providerName: 'tmdb',
+      providerId: r.id,
+      mediaType: 'tv',
     });
     return this.tvSerieRepo.save(tvSerie);
+  }
+
+  private async findOrCreateBaseMedia(
+    r: MediaSearchResult,
+    searchType: MediaSearchType,
+  ): Promise<Media> {
+    const existing = await this.mediaRepo.findOneBy({
+      providerName: 'tmdb',
+      providerId: r.id,
+    });
+    if (existing) return existing;
+
+    const media = this.mediaRepo.create({
+      title: r.title,
+      translatedTitle: r.translatedTitle,
+      releaseDate: r.releaseDate,
+      posterUrl: r.posterUrl,
+      overview: r.overview,
+      originalLanguage: r.originalLanguage,
+      rating: r.rating,
+      tmdbId: r.id,
+      providerName: 'tmdb',
+      providerId: r.id,
+      mediaType: searchType,
+    });
+
+    return this.mediaRepo.save(media);
   }
 
   private async upsertCache(

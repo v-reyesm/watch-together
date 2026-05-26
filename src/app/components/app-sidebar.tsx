@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import {
   HomeIcon,
@@ -12,7 +13,8 @@ import {
   UserIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { sampleLists } from "@/components/watch-ui";
+import { getWatchLists } from "@/lib/watch-api";
+import type { ApiWatchList } from "@/lib/watch-api";
 
 const navItems = [
   { href: "/", label: "Inicio", icon: HomeIcon },
@@ -56,6 +58,11 @@ function NavLinks() {
 
 function SidebarContent() {
   const pathname = usePathname();
+  const [lists, setLists] = useState<ApiWatchList[]>([]);
+
+  useEffect(() => {
+    getWatchLists().then(({ data }) => setLists(data ?? []));
+  }, []);
 
   return (
     <>
@@ -81,17 +88,14 @@ function SidebarContent() {
             Mis listas
           </p>
           <div className="flex flex-col gap-0.5">
-            {sampleLists.map((list) => {
-              const active =
-                pathname.startsWith("/lists") && list.id === "friday";
-              const pending = list.items.filter(
-                (item) => item.status === "pending",
-              ).length;
+            {lists.map((list, index) => {
+              const active = pathname.startsWith("/lists") && index === 0;
+              const pending = list.pendingCount;
 
               return (
                 <Link
                   key={list.id}
-                  href="/lists"
+                  href={`/lists?list=${list.id}`}
                   className={cn(
                     "flex items-center justify-between gap-2 rounded-md px-2.5 py-2 text-sm transition-colors",
                     active
@@ -102,7 +106,11 @@ function SidebarContent() {
                   <span className="flex min-w-0 items-center gap-2">
                     <span
                       className="size-2 shrink-0 rounded-full"
-                      style={{ backgroundColor: list.color }}
+                      style={{
+                        backgroundColor: ["#e88aa6", "#a98ad0", "#3a8d9a"][
+                          index % 3
+                        ],
+                      }}
                     />
                     <span className="truncate">{list.name}</span>
                   </span>

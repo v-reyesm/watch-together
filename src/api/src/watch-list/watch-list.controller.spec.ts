@@ -8,7 +8,12 @@ describe('WatchListController', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [WatchListController],
-      providers: [WatchListService],
+      providers: [
+        {
+          provide: WatchListService,
+          useValue: {},
+        },
+      ],
     }).compile();
 
     controller = module.get<WatchListController>(WatchListController);

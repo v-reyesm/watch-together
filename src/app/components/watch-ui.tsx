@@ -18,14 +18,16 @@ import {
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-type Poster = {
+export type Poster = {
   bg: string;
   ink: string;
   accent: string;
 };
 
-type WatchItem = {
+export type WatchItem = {
   id: string;
+  numericId?: number;
+  providerId?: number | null;
   title: string;
   year: number;
   type: "pelicula" | "serie";
@@ -39,8 +41,9 @@ type WatchItem = {
   };
 };
 
-type WatchList = {
+export type WatchList = {
   id: string;
+  numericId?: number;
   name: string;
   color: string;
   members: string[];
@@ -298,7 +301,7 @@ export function WatchListCard({ list }: { list: WatchList }) {
 
   return (
     <Link
-      href="/lists"
+      href={list.numericId ? `/lists?list=${list.numericId}` : "/lists"}
       className="group relative flex flex-col gap-4 overflow-hidden rounded-lg border bg-card p-4 text-left shadow-[0_1px_0_rgba(24,22,20,0.04)] transition hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-[0_10px_30px_rgba(24,22,20,0.08)]"
     >
       <span
@@ -334,7 +337,13 @@ export function WatchListCard({ list }: { list: WatchList }) {
   );
 }
 
-export function WatchItemRow({ item }: { item: WatchItem }) {
+export function WatchItemRow({
+  item,
+  onMarkWatched,
+}: {
+  item: WatchItem;
+  onMarkWatched?: (item: WatchItem) => void;
+}) {
   const TypeIcon = item.type === "serie" ? TvIcon : FilmIcon;
 
   return (
@@ -354,7 +363,13 @@ export function WatchItemRow({ item }: { item: WatchItem }) {
           <StatusChip status={item.status} />
         </div>
         <div className="mt-4 flex flex-wrap gap-2">
-          <Button variant="outline" size="sm" className="h-8 rounded-full">
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 rounded-full"
+            onClick={() => onMarkWatched?.(item)}
+            disabled={!onMarkWatched}
+          >
             <CheckIcon className="size-3.5" />
             Marcar vista
           </Button>
@@ -534,16 +549,19 @@ export function ListTabs() {
 export function PosterGridCard({
   item,
   rank,
+  onMarkWatched,
 }: {
   item: WatchItem;
   rank?: number;
+  onMarkWatched?: (item: WatchItem) => void;
 }) {
   const watched = item.status !== "pending";
 
   return (
     <button
       type="button"
-      disabled
+      onClick={() => onMarkWatched?.(item)}
+      disabled={!onMarkWatched}
       className="group flex min-w-0 flex-col gap-2 text-left"
     >
       <span className="relative block">

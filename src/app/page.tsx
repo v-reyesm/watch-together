@@ -1,62 +1,79 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { ListIcon, EyeIcon } from "lucide-react";
+  InviteBanner,
+  MetricTile,
+  PageIntro,
+  sampleItems,
+  sampleLists,
+  WatchItemRow,
+  WatchListCard,
+} from "@/components/watch-ui";
+import { EyeIcon, ListIcon, PlusIcon } from "lucide-react";
 
 export default function Home() {
-  return (
-    <div className="container flex flex-col gap-8 py-6 md:py-8">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight md:text-3xl">Home</h1>
-        <p className="text-muted-foreground">Your watchlist overview</p>
-      </div>
+  const watched = sampleItems.filter(
+    (item) => item.status !== "pending",
+  ).length;
 
-      <section className="grid gap-4 sm:grid-cols-2">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Lists</CardTitle>
-            <ListIcon className="text-muted-foreground size-5" />
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold text-primary">0</p>
-            <p className="text-muted-foreground text-xs">watchlists</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Watched</CardTitle>
-            <EyeIcon className="text-muted-foreground size-5" />
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold text-primary">0/0</p>
-            <p className="text-muted-foreground text-xs">items completed</p>
-          </CardContent>
-        </Card>
+  return (
+    <div className="container flex max-w-6xl flex-col gap-8 py-6 md:py-10">
+      <PageIntro
+        eyebrow="Hola, tú"
+        title="Mis listas"
+        description="Una vista tranquila para decidir qué ver juntos, revisar pendientes y distinguir lo visto solo de lo visto en pareja."
+        action={
+          <Button asChild className="rounded-full">
+            <Link href="/lists/new">
+              <PlusIcon className="size-4" />
+              Nueva lista
+            </Link>
+          </Button>
+        }
+      />
+
+      <section className="grid gap-3 sm:grid-cols-2">
+        <MetricTile
+          label="Listas"
+          value={String(sampleLists.length)}
+          detail="listas compartidas"
+          icon={ListIcon}
+        />
+        <MetricTile
+          label="Vistas"
+          value={`${watched}/${sampleItems.length}`}
+          detail="títulos completados"
+          icon={EyeIcon}
+        />
       </section>
 
-      <section className="flex flex-col gap-4">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <h2 className="text-lg font-semibold">Your Lists</h2>
-          <Button asChild>
-            <Link href="/lists/new">+ New List</Link>
-          </Button>
-        </div>
-        <Card className="flex min-h-[240px] flex-col items-center justify-center border-dashed">
-          <CardContent className="flex flex-col items-center justify-center gap-2 pt-6">
-            <ListIcon className="text-muted-foreground size-12" />
-            <p className="text-muted-foreground text-center text-sm">
-              No watchlists yet. Create your first one!
-            </p>
-            <Button variant="outline" size="sm" asChild>
-              <Link href="/lists/new">Create list</Link>
+      <InviteBanner />
+
+      <section className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
+        <div className="flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold tracking-tight">
+              Listas compartidas
+            </h2>
+            <Button variant="ghost" size="sm" asChild>
+              <Link href="/lists">Ver todas</Link>
             </Button>
-          </CardContent>
-        </Card>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+            {sampleLists.map((list) => (
+              <WatchListCard key={list.id} list={list} />
+            ))}
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-3">
+          <h2 className="text-lg font-semibold tracking-tight">
+            Pendientes destacados
+          </h2>
+          {sampleItems.slice(0, 3).map((item) => (
+            <WatchItemRow key={item.id} item={item} />
+          ))}
+        </div>
       </section>
     </div>
   );

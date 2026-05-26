@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ColorSchemeProvider } from "@/components/color-scheme-provider";
 import { AuthProvider } from "@/lib/auth";
@@ -7,16 +6,6 @@ import { GoogleProvider } from "@/components/auth/google-provider";
 import { AuthGuard } from "@/components/auth/auth-guard";
 import { AuthLayout } from "@/components/auth/auth-layout";
 import "./globals.css";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
 
 export const metadata: Metadata = {
   title: "WatchTogether",
@@ -34,16 +23,14 @@ export default function RootLayout({
       <head>
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){var s=localStorage.getItem("watchtogether-color-scheme");var v=["violet","blue","emerald","rose","amber"].indexOf(s)>=0?s:"violet";document.documentElement.dataset.colorScheme=v})();`,
+            __html: `(function(){var s=localStorage.getItem("watchtogether-color-scheme");var m={emerald:"bosque",rose:"rosita",blue:"indigo",violet:"ciruela",amber:"arena"};s=m[s]||s;var a=["rosita","lila","bosque","terracota","arena","indigo","tinta","cereza","ciruela","aqua","oliva","rosa"];var v=a.indexOf(s)>=0?s:"rosita";document.documentElement.dataset.colorScheme=v})();`,
           }}
         />
       </head>
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} min-h-screen antialiased`}
-      >
+      <body className="min-h-screen antialiased">
         <ThemeProvider
           attribute="class"
-          defaultTheme="system"
+          defaultTheme="light"
           enableSystem
           disableTransitionOnChange
         >

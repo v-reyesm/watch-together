@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { PosterBlock, sampleItems, StatusChip } from "@/components/watch-ui";
 import { useAuth } from "@/lib/auth";
 import { apiFetch } from "@/lib/api";
 
@@ -44,9 +45,34 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center px-4">
-      <Card className="w-full max-w-sm">
-        <CardHeader className="text-center">
+    <div className="grid min-h-screen bg-background px-4 py-6 md:grid-cols-[1fr_420px] md:px-8">
+      <section className="hidden flex-col justify-center pr-10 md:flex">
+        <p className="font-mono text-[0.68rem] uppercase tracking-[0.18em] text-muted-foreground">
+          WatchTogether
+        </p>
+        <h1 className="mt-4 max-w-xl text-5xl font-semibold leading-[0.95] tracking-tight">
+          Una lista para ustedes dos.
+        </h1>
+        <p className="mt-5 max-w-md text-base leading-7 text-muted-foreground">
+          Crea tu cuenta, arma una lista compartida e invita por enlace o email
+          cuando el flujo de invitaciones esté conectado.
+        </p>
+        <div className="mt-8 grid max-w-sm grid-cols-3 gap-2">
+          {sampleItems.slice(0, 3).map((item) => (
+            <PosterBlock key={item.id} item={item} />
+          ))}
+        </div>
+        <div className="mt-4">
+          <StatusChip status="watchedTogether" />
+        </div>
+      </section>
+
+      <div className="flex items-center justify-center">
+      <Card className="w-full max-w-sm rounded-lg">
+        <CardHeader>
+          <p className="font-mono text-[0.65rem] uppercase tracking-[0.18em] text-muted-foreground">
+            WatchTogether
+          </p>
           <CardTitle className="text-2xl">Crear cuenta</CardTitle>
           <p className="text-muted-foreground text-sm">
             Completa los datos para registrarte
@@ -125,6 +151,7 @@ export default function RegisterPage() {
           </p>
         </CardContent>
       </Card>
+      </div>
     </div>
   );
 }

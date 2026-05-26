@@ -6,9 +6,15 @@ const baseURL = `http://${HOST}:${PORT}`;
 
 export default defineConfig({
   testDir: "./tests/e2e",
+  timeout: 30_000,
+  expect: {
+    timeout: 5_000,
+  },
   fullyParallel: true,
   retries: process.env.CI ? 2 : 0,
-  reporter: process.env.CI ? [["html", { open: "never" }], ["github"]] : "html",
+  reporter: process.env.CI
+    ? [["html", { open: "never" }], ["github"]]
+    : [["list"]],
   use: {
     baseURL,
     trace: "on-first-retry",
@@ -20,11 +26,15 @@ export default defineConfig({
       name: "chromium",
       use: { ...devices["Desktop Chrome"] },
     },
+    {
+      name: "mobile-chrome",
+      use: { ...devices["Pixel 5"] },
+    },
   ],
   webServer: {
-    command: `corepack pnpm exec next dev --hostname ${HOST} --port ${PORT}`,
-    url: baseURL,
-    reuseExistingServer: process.env.PW_REUSE_SERVER === "1",
+    command: `pnpm exec next dev --hostname ${HOST} --port ${PORT}`,
+    url: `${baseURL}/sign-in`,
+    reuseExistingServer: !process.env.CI,
     stdout: "pipe",
     stderr: "pipe",
     env: {

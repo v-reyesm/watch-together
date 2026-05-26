@@ -7,6 +7,7 @@ import { GoogleLogin } from "@react-oauth/google";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { hasGoogleClientId } from "@/components/auth/google-provider";
+import { PosterBlock, sampleItems, StatusChip } from "@/components/watch-ui";
 import { useAuth } from "@/lib/auth";
 import { apiFetch } from "@/lib/api";
 
@@ -67,9 +68,38 @@ export default function SignInPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center px-4">
-      <Card className="w-full max-w-sm">
-        <CardHeader className="text-center">
+    <div className="grid min-h-screen bg-background px-4 py-6 md:grid-cols-[1fr_420px] md:px-8">
+      <section className="hidden flex-col justify-center pr-10 md:flex">
+        <p className="font-mono text-[0.68rem] uppercase tracking-[0.18em] text-muted-foreground">
+          WatchTogether
+        </p>
+        <h1 className="mt-4 max-w-xl text-5xl font-semibold leading-[0.95] tracking-tight">
+          Decidan juntos qué van a ver.
+        </h1>
+        <p className="mt-5 max-w-md text-base leading-7 text-muted-foreground">
+          Una lista compartida para dos: agregar pelis y series, marcar lo
+          visto y mantener claro qué fue juntos y qué fue solo.
+        </p>
+        <div className="mt-8 flex max-w-sm items-center gap-4 rounded-lg border bg-card p-4">
+          <PosterBlock item={sampleItems[0]} className="w-16" />
+          <div className="min-w-0">
+            <p className="truncate text-sm font-semibold">Past Lives</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              2023 · Película
+            </p>
+            <div className="mt-3">
+              <StatusChip status="pending" />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div className="flex items-center justify-center">
+        <Card className="w-full max-w-sm rounded-lg">
+        <CardHeader>
+          <p className="font-mono text-[0.65rem] uppercase tracking-[0.18em] text-muted-foreground">
+            WatchTogether
+          </p>
           <CardTitle className="text-2xl">Iniciar sesión</CardTitle>
           <p className="text-muted-foreground text-sm">
             Ingresa tus credenciales para continuar
@@ -156,7 +186,8 @@ export default function SignInPage() {
             </Link>
           </p>
         </CardContent>
-      </Card>
+        </Card>
+      </div>
     </div>
   );
 }

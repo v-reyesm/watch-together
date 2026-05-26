@@ -1,15 +1,40 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
 
-export const COLOR_SCHEMES = ["violet", "blue", "emerald", "rose", "amber"] as const;
+export const COLOR_SCHEMES = [
+  "rosita",
+  "lila",
+  "bosque",
+  "terracota",
+  "arena",
+  "indigo",
+  "tinta",
+  "cereza",
+  "ciruela",
+  "aqua",
+  "oliva",
+  "rosa",
+] as const;
 export type ColorScheme = (typeof COLOR_SCHEMES)[number];
 
 const STORAGE_KEY = "watchtogether-color-scheme";
+const DEFAULT_SCHEME: ColorScheme = "rosita";
 
 function getStoredScheme(): ColorScheme {
-  if (typeof window === "undefined") return "violet";
+  if (typeof window === "undefined") return DEFAULT_SCHEME;
   const stored = localStorage.getItem(STORAGE_KEY);
+  if (stored === "emerald") return "bosque";
+  if (stored === "rose") return "rosita";
+  if (stored === "blue") return "indigo";
+  if (stored === "violet") return "ciruela";
+  if (stored === "amber") return "arena";
   if (stored && COLOR_SCHEMES.includes(stored as ColorScheme)) {
     return stored as ColorScheme;
   }
@@ -17,22 +42,28 @@ function getStoredScheme(): ColorScheme {
   if (fromDoc && COLOR_SCHEMES.includes(fromDoc as ColorScheme)) {
     return fromDoc as ColorScheme;
   }
-  return "violet";
+  return DEFAULT_SCHEME;
 }
 
 const ColorSchemeContext = createContext<{
   colorScheme: ColorScheme;
   setColorScheme: (scheme: ColorScheme) => void;
-}>({ colorScheme: "violet", setColorScheme: () => {} });
+}>({ colorScheme: DEFAULT_SCHEME, setColorScheme: () => {} });
 
 export function useColorScheme() {
   const ctx = useContext(ColorSchemeContext);
-  if (!ctx) throw new Error("useColorScheme must be used within ColorSchemeProvider");
+  if (!ctx)
+    throw new Error("useColorScheme must be used within ColorSchemeProvider");
   return ctx;
 }
 
-export function ColorSchemeProvider({ children }: { children: React.ReactNode }) {
-  const [colorScheme, setColorSchemeState] = useState<ColorScheme>("violet");
+export function ColorSchemeProvider({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const [colorScheme, setColorSchemeState] =
+    useState<ColorScheme>(DEFAULT_SCHEME);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {

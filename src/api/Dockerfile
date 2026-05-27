@@ -3,7 +3,7 @@ FROM node:20-alpine AS base
 FROM base AS deps
 WORKDIR /app
 COPY package.json package-lock.json* ./
-RUN npm ci
+RUN npm ci --ignore-scripts
 
 FROM base AS builder
 WORKDIR /app
@@ -16,7 +16,7 @@ WORKDIR /app
 ENV NODE_ENV=production
 
 COPY package.json package-lock.json* ./
-RUN npm ci --omit=dev
+RUN npm ci --omit=dev --omit=optional
 
 COPY --from=builder /app/dist ./dist
 

@@ -1,26 +1,31 @@
-import { SearchIcon } from "lucide-react";
+import {
+  ComingSoonNote,
+  PageIntro,
+  sampleItems,
+  SearchPanel,
+  WatchItemRow,
+} from "@/components/watch-ui";
 
 export default function SearchPage() {
   return (
-    <div className="container flex flex-col items-center gap-6 py-8 md:py-12">
-      <div className="w-full max-w-xl space-y-2 text-center">
-        <h1 className="text-2xl font-bold tracking-tight md:text-3xl">Search</h1>
-        <p className="text-muted-foreground">
-          Find movies & series to add to your lists
-        </p>
-      </div>
-      <div className="bg-muted/50 border-input flex w-full max-w-xl items-center gap-2 rounded-lg border px-4 py-3">
-        <SearchIcon className="text-muted-foreground size-5 shrink-0" />
-        <input
-          type="search"
-          placeholder="Search movies or series..."
-          className="bg-transparent placeholder:text-muted-foreground w-full outline-none"
-          disabled
-        />
-      </div>
-      <p className="text-muted-foreground text-sm">
-        Search functionality coming soon — requires API keys (TMDB / OMDB).
-      </p>
+    <div className="container flex max-w-4xl flex-col gap-8 py-6 md:py-10">
+      <PageIntro
+        eyebrow="TMDB primero"
+        title="Buscar y agregar"
+        description="La búsqueda se ve desde el frontend, pero la consulta real debe pasar por el backend para proteger la clave de TMDB."
+      />
+
+      <SearchPanel />
+      <ComingSoonNote />
+
+      <section className="flex flex-col gap-3">
+        <h2 className="text-lg font-semibold tracking-tight">
+          Sugerencias visuales
+        </h2>
+        {sampleItems.slice(0, 4).map((item) => (
+          <WatchItemRow key={item.id} item={item} />
+        ))}
+      </section>
     </div>
   );
 }

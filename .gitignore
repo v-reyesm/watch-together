@@ -18,6 +18,8 @@
 
 # next.js
 /.next/
+/test-results/
+/playwright-report/
 /out/
 
 # production

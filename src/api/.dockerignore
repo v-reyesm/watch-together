@@ -1,10 +1,9 @@
 node_modules
 dist
-npm-debug.log
-README.md
+coverage
 .env
-.env.local
-.env.production.local
+.env.*
+npm-debug.log*
 .git
 .gitignore
-coverage
+README.md

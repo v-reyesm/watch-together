@@ -16,10 +16,14 @@ const authUser: UserProfile = {
 
 async function expectSignInPage(page: Page) {
   await expect(page).toHaveURL(/\/sign-in(?:\?.*)?$/);
-  await expect(page.getByText("Ingresa tus credenciales para continuar")).toBeVisible();
+  await expect(
+    page.getByText("Ingresa tus credenciales para continuar"),
+  ).toBeVisible();
   await expect(page.getByLabel("Email")).toBeVisible();
   await expect(page.getByLabel("Contraseña")).toBeVisible();
-  await expect(page.getByRole("button", { name: "Iniciar sesión" })).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Iniciar sesión" }),
+  ).toBeVisible();
 }
 
 async function expectProfilePage(page: Page, user: UserProfile = authUser) {
@@ -28,7 +32,9 @@ async function expectProfilePage(page: Page, user: UserProfile = authUser) {
   await expect(page.getByText("Tu cuenta y preferencias")).toBeVisible();
   await expect(page.getByText(user.email)).toBeVisible();
   await expect(page.getByLabel("Nombre para mostrar")).toHaveValue(user.name);
-  await expect(page.getByRole("button", { name: /Cerrar sesión/ })).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: /Cerrar sesión/ }),
+  ).toBeVisible();
 }
 
 async function mockLoggedOutSession(page: Page) {
@@ -41,7 +47,10 @@ async function mockLoggedOutSession(page: Page) {
   });
 }
 
-async function mockAuthenticatedSession(page: Page, user: UserProfile = authUser) {
+async function mockAuthenticatedSession(
+  page: Page,
+  user: UserProfile = authUser,
+) {
   await page.route("**/api/users/me", async (route) => {
     await route.fulfill({
       status: 200,
@@ -52,14 +61,18 @@ async function mockAuthenticatedSession(page: Page, user: UserProfile = authUser
 }
 
 test.describe("auth", () => {
-  test("redirects a guest from a protected page to sign-in", async ({ page }) => {
+  test("redirects a guest from a protected page to sign-in", async ({
+    page,
+  }) => {
     await mockLoggedOutSession(page);
 
     await page.goto("/profile");
     await expectSignInPage(page);
   });
 
-  test("allows sign-in and sign-out from the profile flow", async ({ page }) => {
+  test("allows sign-in and sign-out from the profile flow", async ({
+    page,
+  }) => {
     await page.route("**/api/auth/login", async (route) => {
       await route.fulfill({
         status: 200,
@@ -77,7 +90,7 @@ test.describe("auth", () => {
 
     await expect(page).toHaveURL("/");
     await expect(
-      page.getByRole("heading", { name: "Home" }),
+      page.getByRole("heading", { name: "Mis listas" }),
     ).toBeVisible();
     await expect
       .poll(async () =>
@@ -146,7 +159,9 @@ test.describe("auth", () => {
 
     await expect(page).toHaveURL(/\/sign-in\?expired=1$/);
     await expect(
-      page.getByRole("alert").getByText("Tu sesión ha expirado. Inicia sesión de nuevo."),
+      page
+        .getByRole("alert")
+        .getByText("Tu sesión ha expirado. Inicia sesión de nuevo."),
     ).toBeVisible();
     await expect
       .poll(async () =>

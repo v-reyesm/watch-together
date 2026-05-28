@@ -1,20 +1,50 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
   InviteBanner,
   MetricTile,
   PageIntro,
-  sampleItems,
-  sampleLists,
   WatchItemRow,
   WatchListCard,
 } from "@/components/watch-ui";
 import { EyeIcon, ListIcon, PlusIcon } from "lucide-react";
+import { getWatchSummary, markListItemWatched } from "@/lib/watch-api";
+import type { ApiWatchSummary } from "@/lib/watch-api";
+import { itemFromApi, listFromApi } from "@/lib/watch-mappers";
 
 export default function Home() {
-  const watched = sampleItems.filter(
-    (item) => item.status !== "pending",
-  ).length;
+  const [summary, setSummary] = useState<ApiWatchSummary | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  async function loadSummary() {
+    setLoading(true);
+    const { data, error: apiError } = await getWatchSummary();
+    setSummary(data);
+    setError(apiError ?? null);
+    setLoading(false);
+  }
+
+  useEffect(() => {
+    void loadSummary();
+  }, []);
+
+  const lists = summary?.lists.map(listFromApi) ?? [];
+  const highlightedItems = summary?.highlightedItems.map(itemFromApi) ?? [];
+
+  async function handleMarkWatched(itemId: number | undefined) {
+    const firstList = summary?.lists.find((list) =>
+      list.items.some((item) => item.id === itemId),
+    );
+    if (!firstList || !itemId) return;
+    const { data } = await markListItemWatched(firstList.id, itemId);
+    if (data) {
+      await loadSummary();
+    }
+  }
 
   return (
     <div className="container flex max-w-6xl flex-col gap-8 py-6 md:py-10">
@@ -32,16 +62,26 @@ export default function Home() {
         }
       />
 
+      {error ? (
+        <div role="alert" className="rounded-lg border bg-card p-4 text-sm">
+          {error}
+        </div>
+      ) : null}
+
       <section className="grid gap-3 sm:grid-cols-2">
         <MetricTile
           label="Listas"
-          value={String(sampleLists.length)}
+          value={loading ? "..." : String(summary?.listCount ?? 0)}
           detail="listas compartidas"
           icon={ListIcon}
         />
         <MetricTile
           label="Vistas"
-          value={`${watched}/${sampleItems.length}`}
+          value={
+            loading
+              ? "..."
+              : `${summary?.watchedCount ?? 0}/${summary?.itemCount ?? 0}`
+          }
           detail="títulos completados"
           icon={EyeIcon}
         />
@@ -60,9 +100,14 @@ export default function Home() {
             </Button>
           </div>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
-            {sampleLists.map((list) => (
+            {lists.map((list) => (
               <WatchListCard key={list.id} list={list} />
             ))}
+            {!loading && lists.length === 0 ? (
+              <div className="rounded-lg border bg-card p-4 text-sm text-muted-foreground">
+                Aún no tienes listas compartidas.
+              </div>
+            ) : null}
           </div>
         </div>
 
@@ -70,9 +115,18 @@ export default function Home() {
           <h2 className="text-lg font-semibold tracking-tight">
             Pendientes destacados
           </h2>
-          {sampleItems.slice(0, 3).map((item) => (
-            <WatchItemRow key={item.id} item={item} />
+          {highlightedItems.slice(0, 3).map((item) => (
+            <WatchItemRow
+              key={item.id}
+              item={item}
+              onMarkWatched={() => handleMarkWatched(item.numericId)}
+            />
           ))}
+          {!loading && highlightedItems.length === 0 ? (
+            <div className="rounded-lg border bg-card p-4 text-sm text-muted-foreground">
+              Agrega títulos desde búsqueda para ver pendientes acá.
+            </div>
+          ) : null}
         </div>
       </section>
     </div>

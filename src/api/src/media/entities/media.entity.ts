@@ -43,6 +43,15 @@ export class Media {
   @Column({ nullable: true })
   tmdbId?: number;
 
+  @Column({ type: 'varchar', length: 30, default: 'tmdb' })
+  providerName: 'tmdb';
+
+  @Column({ nullable: true })
+  providerId?: number;
+
+  @Column({ type: 'varchar', length: 20, default: 'movie' })
+  mediaType: 'movie' | 'tv';
+
   @Column({ nullable: true })
   imdbId?: string;
 

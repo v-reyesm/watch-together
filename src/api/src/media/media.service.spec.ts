@@ -5,6 +5,7 @@ import { Movie } from '../movies/entities/movie.entity';
 import { TvSerie } from '../tv-series/entities/tv-serie.entity';
 import { TmdbSearchCache } from './entities/tmdb-search-cache.entity';
 import { TmdbService } from '../providers/tmdb/tmdb.service';
+import { Media } from './entities/media.entity';
 
 describe('MediaService', () => {
   let service: MediaService;
@@ -23,6 +24,7 @@ describe('MediaService', () => {
         { provide: getRepositoryToken(Movie), useValue: mockRepo },
         { provide: getRepositoryToken(TvSerie), useValue: mockRepo },
         { provide: getRepositoryToken(TmdbSearchCache), useValue: mockRepo },
+        { provide: getRepositoryToken(Media), useValue: mockRepo },
         { provide: TmdbService, useValue: { search: jest.fn() } },
       ],
     }).compile();

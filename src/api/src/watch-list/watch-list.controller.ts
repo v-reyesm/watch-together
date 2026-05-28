@@ -1,45 +1,100 @@
 import {
-  Controller,
-  Get,
-  Post,
   Body,
-  Patch,
-  Param,
+  Controller,
   Delete,
+  Get,
+  Param,
+  ParseIntPipe,
+  Patch,
+  Post,
 } from '@nestjs/common';
-import { WatchListService } from './watch-list.service';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import type { CurrentUserPayload } from '../auth/decorators/current-user.decorator';
+import { AddListItemDto } from './dto/add-list-item.dto';
 import { CreateWatchListDto } from './dto/create-watch-list.dto';
 import { UpdateWatchListDto } from './dto/update-watch-list.dto';
+import { WatchListService } from './watch-list.service';
 
-@Controller('watch-list')
+@Controller('watch-lists')
 export class WatchListController {
   constructor(private readonly watchListService: WatchListService) {}
 
   @Post()
-  create(@Body() createWatchListDto: CreateWatchListDto) {
-    return this.watchListService.create(createWatchListDto);
+  create(
+    @CurrentUser() currentUser: CurrentUserPayload,
+    @Body() createWatchListDto: CreateWatchListDto,
+  ) {
+    return this.watchListService.create(currentUser.id, createWatchListDto);
   }
 
   @Get()
-  findAll() {
-    return this.watchListService.findAll();
+  findAll(@CurrentUser() currentUser: CurrentUserPayload) {
+    return this.watchListService.findAll(currentUser.id);
+  }
+
+  @Get('summary')
+  summary(@CurrentUser() currentUser: CurrentUserPayload) {
+    return this.watchListService.summary(currentUser.id);
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.watchListService.findOne(+id);
+  findOne(
+    @CurrentUser() currentUser: CurrentUserPayload,
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    return this.watchListService.findOne(currentUser.id, id);
   }
 
   @Patch(':id')
   update(
-    @Param('id') id: string,
+    @CurrentUser() currentUser: CurrentUserPayload,
+    @Param('id', ParseIntPipe) id: number,
     @Body() updateWatchListDto: UpdateWatchListDto,
   ) {
-    return this.watchListService.update(+id, updateWatchListDto);
+    return this.watchListService.update(currentUser.id, id, updateWatchListDto);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.watchListService.remove(+id);
+  remove(
+    @CurrentUser() currentUser: CurrentUserPayload,
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    return this.watchListService.remove(currentUser.id, id);
+  }
+
+  @Post(':id/items')
+  addItem(
+    @CurrentUser() currentUser: CurrentUserPayload,
+    @Param('id', ParseIntPipe) id: number,
+    @Body() addListItemDto: AddListItemDto,
+  ) {
+    return this.watchListService.addItem(currentUser.id, id, addListItemDto);
+  }
+
+  @Delete(':id/items/:itemId')
+  removeItem(
+    @CurrentUser() currentUser: CurrentUserPayload,
+    @Param('id', ParseIntPipe) id: number,
+    @Param('itemId', ParseIntPipe) itemId: number,
+  ) {
+    return this.watchListService.removeItem(currentUser.id, id, itemId);
+  }
+
+  @Post(':id/items/:itemId/watch-events')
+  markWatched(
+    @CurrentUser() currentUser: CurrentUserPayload,
+    @Param('id', ParseIntPipe) id: number,
+    @Param('itemId', ParseIntPipe) itemId: number,
+  ) {
+    return this.watchListService.markWatched(currentUser.id, id, itemId);
+  }
+
+  @Delete(':id/items/:itemId/watch-events/latest')
+  undoLatestWatch(
+    @CurrentUser() currentUser: CurrentUserPayload,
+    @Param('id', ParseIntPipe) id: number,
+    @Param('itemId', ParseIntPipe) itemId: number,
+  ) {
+    return this.watchListService.undoLatestWatch(currentUser.id, id, itemId);
   }
 }

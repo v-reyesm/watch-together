@@ -7,12 +7,102 @@ const user = {
   avatarUrl: null,
 };
 
+const apiItem = {
+  id: 10,
+  providerName: "tmdb",
+  providerId: 666277,
+  mediaType: "movie",
+  title: "Past Lives",
+  translatedTitle: "Past Lives",
+  year: 2023,
+  posterUrl: "",
+  overview: "Two childhood friends reconnect.",
+  originalLanguage: "en",
+  rating: 7.8,
+  status: "pending",
+  watchedAt: null,
+};
+
+const apiList = {
+  id: 1,
+  name: "Noches de viernes",
+  description: "Peliculas para dos",
+  members: [
+    {
+      id: 1,
+      name: "Tú",
+      email: "ui@example.com",
+      role: "owner",
+      initials: "T",
+    },
+    {
+      id: 2,
+      name: "Ana",
+      email: "ana@example.com",
+      role: "member",
+      initials: "A",
+    },
+  ],
+  itemCount: 1,
+  pendingCount: 1,
+  watchedCount: 0,
+  items: [apiItem],
+};
+
 async function mockAuthenticatedUser(page: Page) {
   await page.route("**/api/users/me", async (route) => {
     await route.fulfill({
       status: 200,
       contentType: "application/json",
       body: JSON.stringify(user),
+    });
+  });
+  await page.route("**/api/watch-lists/summary", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        listCount: 1,
+        itemCount: 1,
+        watchedCount: 0,
+        pendingCount: 1,
+        lists: [apiList],
+        highlightedItems: [apiItem],
+      }),
+    });
+  });
+  await page.route("**/api/watch-lists", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify([apiList]),
+    });
+  });
+  await page.route("**/api/watch-lists/1", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify(apiList),
+    });
+  });
+  await page.route("**/api/media/search?**", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify([
+        {
+          id: 666277,
+          title: "Past Lives",
+          translatedTitle: "Past Lives",
+          releaseDate: "2023-06-02T00:00:00.000Z",
+          posterUrl: "",
+          overview: "Two childhood friends reconnect.",
+          genres: [],
+          originalLanguage: "en",
+          rating: 7.8,
+          mediaType: "movie",
+        },
+      ]),
     });
   });
 
@@ -91,7 +181,7 @@ test.describe("authenticated UI", () => {
     await expect(
       page.getByRole("button", { name: /Past Lives/ }),
     ).toBeVisible();
-    await expect(page.getByText("Match alto")).toBeVisible();
+    await expect(page.getByText("Pendiente").first()).toBeVisible();
     await expect(
       page.getByRole("link", { name: /Coming soon|Soon/ }),
     ).toBeVisible();

@@ -19,10 +19,7 @@ import {
 } from 'typeorm';
 import { AuthController } from '../src/auth/auth.controller';
 import { AuthService } from '../src/auth/auth.service';
-import {
-  JwtPayload,
-  JwtStrategy,
-} from '../src/auth/strategies/jwt.strategy';
+import { JwtPayload, JwtStrategy } from '../src/auth/strategies/jwt.strategy';
 import { UsersService } from '../src/users/users.service';
 import { UsersController } from '../src/users/users.controller';
 import { GlobalJwtAuthGuard } from '../src/auth/guards/global-jwt-auth.guard';
@@ -134,7 +131,9 @@ describe('Auth (e2e)', () => {
     app.useGlobalGuards(new GlobalJwtAuthGuard(reflector));
 
     jwtService = moduleFixture.get<JwtService>(JwtService);
-    usersRepo = moduleFixture.get<Repository<TestUser>>(getRepositoryToken(User));
+    usersRepo = moduleFixture.get<Repository<TestUser>>(
+      getRepositoryToken(User),
+    );
     await app.init();
   }, 30_000);
 

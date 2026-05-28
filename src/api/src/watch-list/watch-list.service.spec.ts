@@ -14,7 +14,7 @@ describe('WatchListService', () => {
     findOne: jest.fn(),
     findOneBy: jest.fn(),
     save: jest.fn(),
-    create: jest.fn((value) => value),
+    create: jest.fn(<T>(value: T): T => value),
     remove: jest.fn(),
   };
 

@@ -58,7 +58,10 @@ export class InvitesService {
   async revoke(userId: number, watchListId: number, inviteId: number) {
     await this.assertOwner(userId, watchListId);
 
-    const invite = await this.inviteRepo.findOneBy({ id: inviteId, watchListId });
+    const invite = await this.inviteRepo.findOneBy({
+      id: inviteId,
+      watchListId,
+    });
     if (!invite) {
       throw new NotFoundException('Invitación no encontrada');
     }
@@ -105,7 +108,9 @@ export class InvitesService {
       throw new ConflictException('Esta invitación ya fue usada');
     }
 
-    const listExists = await this.watchListRepo.existsBy({ id: invite.watchListId });
+    const listExists = await this.watchListRepo.existsBy({
+      id: invite.watchListId,
+    });
     if (!listExists) {
       throw new NotFoundException('Lista no encontrada');
     }
@@ -137,7 +142,9 @@ export class InvitesService {
 
     const membership = await this.memberRepo.findOneBy({ userId, watchListId });
     if (!membership || membership.role !== 'owner') {
-      throw new ForbiddenException('Solo el owner puede gestionar invitaciones');
+      throw new ForbiddenException(
+        'Solo el owner puede gestionar invitaciones',
+      );
     }
   }
 

@@ -36,6 +36,22 @@ import { InvitesService } from '../src/invites/invites.service';
 
 const JWT_SECRET = 'test-jwt-secret-for-watch-list-e2e';
 
+type ListResponseBody = {
+  id: number;
+};
+
+type InviteResponseBody = {
+  token: string;
+  watchListId: number;
+  status: string;
+};
+
+type WatchListResponseBody = {
+  id: number;
+  name: string;
+  members: unknown[];
+};
+
 @Entity({ name: 'users' })
 class TestUser {
   @PrimaryGeneratedColumn()
@@ -427,17 +443,19 @@ describe('Watch lists (e2e)', () => {
       .set('Authorization', `Bearer ${token}`)
       .send({ name: 'Lista compartida', description: 'Para invitar' })
       .expect(201);
+    const listBody = listRes.body as unknown as ListResponseBody;
 
     const inviteRes = await request(app.getHttpServer())
-      .post(`/api/watch-lists/${listRes.body.id}/invites`)
+      .post(`/api/watch-lists/${listBody.id}/invites`)
       .set('Authorization', `Bearer ${token}`)
       .expect(201);
+    const inviteBody = inviteRes.body as unknown as InviteResponseBody;
 
-    expect(inviteRes.body).toMatchObject({
-      watchListId: listRes.body.id,
+    expect(inviteBody).toMatchObject({
+      watchListId: listBody.id,
       status: 'active',
     });
-    expect(inviteRes.body.token).toEqual(expect.any(String));
+    expect(inviteBody.token).toEqual(expect.any(String));
 
     const partner = await userRepo.save(
       userRepo.create({
@@ -454,14 +472,14 @@ describe('Watch lists (e2e)', () => {
     });
 
     const joinRes = await request(app.getHttpServer())
-      .post(`/api/invites/${inviteRes.body.token}/join`)
+      .post(`/api/invites/${inviteBody.token}/join`)
       .set('Authorization', `Bearer ${partnerToken}`)
       .expect(201);
 
     expect(joinRes.body).toMatchObject({
       ok: true,
       alreadyMember: false,
-      watchListId: listRes.body.id,
+      watchListId: listBody.id,
       message: 'Te uniste a la lista',
     });
 
@@ -469,11 +487,13 @@ describe('Watch lists (e2e)', () => {
       .get('/api/watch-lists')
       .set('Authorization', `Bearer ${partnerToken}`)
       .expect(200);
+    const partnerLists =
+      partnerListsRes.body as unknown as WatchListResponseBody[];
 
-    expect(partnerListsRes.body[0]).toMatchObject({
-      id: listRes.body.id,
+    expect(partnerLists[0]).toMatchObject({
+      id: listBody.id,
       name: 'Lista compartida',
     });
-    expect(partnerListsRes.body[0].members).toHaveLength(2);
+    expect(partnerLists[0].members).toHaveLength(2);
   });
 });

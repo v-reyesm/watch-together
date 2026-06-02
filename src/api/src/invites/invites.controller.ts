@@ -1,4 +1,11 @@
-import { Controller, Delete, Get, Param, ParseIntPipe, Post } from '@nestjs/common';
+import {
+  Controller,
+  Delete,
+  Get,
+  Param,
+  ParseIntPipe,
+  Post,
+} from '@nestjs/common';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { CurrentUserPayload } from '../auth/decorators/current-user.decorator';
 import { InvitesService } from './invites.service';

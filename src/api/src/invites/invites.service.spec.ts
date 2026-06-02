@@ -5,15 +5,27 @@ import { InvitesService } from './invites.service';
 import { WatchListMember } from '../watch-list/entities/watch-list-member.entity';
 import { WatchList } from '../watch-list/entities/watch-list.entity';
 
-type InviteRepoMock = Pick<
-  Repository<Invite>,
-  'create' | 'save' | 'findOne' | 'find' | 'findOneBy' | 'target'
->;
-type WatchListRepoMock = Pick<Repository<WatchList>, 'findOneBy' | 'existsBy'>;
-type MemberRepoMock = Pick<
-  Repository<WatchListMember>,
-  'create' | 'save' | 'findOneBy' | 'target'
->;
+type CreateInviteFn = (value: Partial<Invite>) => Invite;
+type CreateMemberFn = (value: Partial<WatchListMember>) => WatchListMember;
+
+type InviteRepoMock = {
+  create: jest.MockedFunction<CreateInviteFn>;
+  save: jest.Mock;
+  findOne: jest.Mock;
+  find: jest.Mock;
+  findOneBy: jest.Mock;
+  target: typeof Invite;
+};
+type WatchListRepoMock = {
+  findOneBy: jest.Mock;
+  existsBy: jest.Mock;
+};
+type MemberRepoMock = {
+  create: jest.MockedFunction<CreateMemberFn>;
+  save: jest.Mock;
+  findOneBy: jest.Mock;
+  target: typeof WatchListMember;
+};
 
 describe('InvitesService', () => {
   let inviteRepo: InviteRepoMock;
@@ -24,7 +36,9 @@ describe('InvitesService', () => {
 
   beforeEach(() => {
     inviteRepo = {
-      create: jest.fn((value: Partial<Invite>) => value as Invite),
+      create: jest
+        .fn<ReturnType<CreateInviteFn>, Parameters<CreateInviteFn>>()
+        .mockImplementation((value) => value as Invite),
       save: jest.fn(),
       findOne: jest.fn(),
       find: jest.fn(),
@@ -36,9 +50,9 @@ describe('InvitesService', () => {
       existsBy: jest.fn(),
     };
     memberRepo = {
-      create: jest.fn(
-        (value: Partial<WatchListMember>) => value as WatchListMember,
-      ),
+      create: jest
+        .fn<ReturnType<CreateMemberFn>, Parameters<CreateMemberFn>>()
+        .mockImplementation((value) => value as WatchListMember),
       save: jest.fn(),
       findOneBy: jest.fn(),
       target: WatchListMember,
@@ -48,9 +62,9 @@ describe('InvitesService', () => {
     };
 
     service = new InvitesService(
-      inviteRepo as Repository<Invite>,
-      watchListRepo as Repository<WatchList>,
-      memberRepo as Repository<WatchListMember>,
+      inviteRepo as unknown as Repository<Invite>,
+      watchListRepo as unknown as Repository<WatchList>,
+      memberRepo as unknown as Repository<WatchListMember>,
       dataSource as DataSource,
     );
   });
@@ -132,9 +146,9 @@ describe('InvitesService', () => {
     };
     const txMemberRepo = {
       findOneBy: jest.fn().mockResolvedValue(null),
-      create: jest.fn(
-        (value: Partial<WatchListMember>) => value as WatchListMember,
-      ),
+      create: jest
+        .fn<ReturnType<CreateMemberFn>, Parameters<CreateMemberFn>>()
+        .mockImplementation((value) => value as WatchListMember),
       save: jest.fn().mockRejectedValue({ code: '23505' }),
     };
     const txManager = {
@@ -151,9 +165,18 @@ describe('InvitesService', () => {
     jest
       .spyOn(dataSource, 'transaction')
       .mockImplementation(
-        async <T>(
-          runInTransaction: (entityManager: EntityManager) => Promise<T>,
-        ) => runInTransaction(txManager),
+        (
+          first: ((entityManager: EntityManager) => Promise<unknown>) | string,
+          second?: (entityManager: EntityManager) => Promise<unknown>,
+        ) => {
+          const runInTransaction = typeof first === 'function' ? first : second;
+
+          if (!runInTransaction) {
+            throw new Error('Missing transaction callback');
+          }
+
+          return runInTransaction(txManager);
+        },
       );
 
     const result = await service.join(9, 'invite-token');

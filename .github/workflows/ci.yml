@@ -13,7 +13,7 @@ concurrency:
 permissions:
   contents: read
   issues: write
-  pull-requests: read
+  pull-requests: write
 
 env:
   NODE_VERSION: "20"
@@ -166,6 +166,7 @@ jobs:
             test-results
           if-no-files-found: ignore
       - if: always() && github.event_name == 'pull_request'
+        continue-on-error: true
         uses: actions/github-script@v7
         with:
           script: |

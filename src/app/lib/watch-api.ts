@@ -92,6 +92,18 @@ export type AddListItemInput = {
   rating?: number;
 };
 
+export type CreateWatchListInput = {
+  name: string;
+  description?: string;
+};
+
+export function createWatchList(input: CreateWatchListInput) {
+  return apiFetch<ApiWatchList>("/api/watch-lists", {
+    method: "POST",
+    body: input,
+  });
+}
+
 export function getWatchSummary() {
   return apiFetch<ApiWatchSummary>("/api/watch-lists/summary");
 }
@@ -131,6 +143,12 @@ export function addListItem(listId: number, item: AddListItemInput) {
   return apiFetch<ApiWatchList>(`/api/watch-lists/${listId}/items`, {
     method: "POST",
     body: { providerName: "tmdb", ...item },
+  });
+}
+
+export function removeListItem(listId: number, itemId: number) {
+  return apiFetch<ApiWatchList>(`/api/watch-lists/${listId}/items/${itemId}`, {
+    method: "DELETE",
   });
 }
 

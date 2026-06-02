@@ -301,7 +301,7 @@ export function WatchListCard({ list }: { list: WatchList }) {
 
   return (
     <Link
-      href={list.numericId ? `/lists?list=${list.numericId}` : "/lists"}
+      href={list.numericId ? `/lists/${list.numericId}` : "/lists"}
       className="group relative flex flex-col gap-4 overflow-hidden rounded-lg border bg-card p-4 text-left shadow-[0_1px_0_rgba(24,22,20,0.04)] transition hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-[0_10px_30px_rgba(24,22,20,0.08)]"
     >
       <span

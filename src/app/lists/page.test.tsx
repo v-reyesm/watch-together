@@ -115,13 +115,11 @@ describe("ListsPage item actions", () => {
     expect(await screen.findByText("1 pendientes")).toBeInTheDocument();
   });
 
-  it("shows the invite link when clipboard copy fails", async () => {
+  it("shows the invite link when clipboard is unavailable", async () => {
     const expectedInviteUrl = `${window.location.origin}/invites/invite-token`;
     Object.defineProperty(navigator, "clipboard", {
       configurable: true,
-      value: {
-        writeText: jest.fn().mockRejectedValue(new Error("denied")),
-      },
+      value: undefined,
     });
     (createInvite as jest.Mock).mockResolvedValue({
       data: {

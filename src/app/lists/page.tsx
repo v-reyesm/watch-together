@@ -93,8 +93,14 @@ export default function ListsPage() {
     const inviteUrl = `${window.location.origin}/invites/${data.token}`;
     setInviteUrl(inviteUrl);
     setError(null);
+    const clipboard = navigator.clipboard?.writeText;
+    if (!clipboard) {
+      setInviteMessage("Invitación creada. Copia el enlace para compartirlo.");
+      return;
+    }
+
     try {
-      await navigator.clipboard?.writeText(inviteUrl);
+      await clipboard.call(navigator.clipboard, inviteUrl);
       setInviteMessage("Invitación creada y enlace copiado.");
     } catch {
       setInviteMessage("Invitación creada. Copia el enlace para compartirlo.");

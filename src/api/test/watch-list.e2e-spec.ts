@@ -483,6 +483,18 @@ describe('Watch lists (e2e)', () => {
       message: 'Te uniste a la lista',
     });
 
+    const secondJoinRes = await request(app.getHttpServer())
+      .post(`/api/invites/${inviteBody.token}/join`)
+      .set('Authorization', `Bearer ${partnerToken}`)
+      .expect(201);
+
+    expect(secondJoinRes.body).toMatchObject({
+      ok: true,
+      alreadyMember: true,
+      watchListId: listBody.id,
+      message: 'Ya eres parte de esta lista',
+    });
+
     const partnerListsRes = await request(app.getHttpServer())
       .get('/api/watch-lists')
       .set('Authorization', `Bearer ${partnerToken}`)

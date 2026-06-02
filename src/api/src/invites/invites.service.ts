@@ -15,6 +15,8 @@ type InviteStatus = 'active' | 'expired' | 'revoked' | 'used';
 
 @Injectable()
 export class InvitesService {
+  private static readonly MAX_TOKEN_RETRIES = 5;
+
   constructor(
     @InjectRepository(Invite)
     private readonly inviteRepo: Repository<Invite>,
@@ -31,16 +33,35 @@ export class InvitesService {
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 7);
 
-    const invite = await this.inviteRepo.save(
-      this.inviteRepo.create({
-        watchListId,
-        createdById: userId,
-        token: this.generateToken(),
-        expiresAt,
-        revokedAt: null,
-        usedAt: null,
-      }),
-    );
+    let invite: Invite | null = null;
+
+    for (let attempt = 0; attempt < InvitesService.MAX_TOKEN_RETRIES; attempt += 1) {
+      try {
+        invite = await this.inviteRepo.save(
+          this.inviteRepo.create({
+            watchListId,
+            createdById: userId,
+            token: this.generateToken(),
+            expiresAt,
+            revokedAt: null,
+            usedAt: null,
+          }),
+        );
+        break;
+      } catch (error) {
+        if (!this.isUniqueConstraintViolation(error)) {
+          throw error;
+        }
+
+        if (attempt === InvitesService.MAX_TOKEN_RETRIES - 1) {
+          throw new ConflictException('No pudimos crear una invitación única');
+        }
+      }
+    }
+
+    if (!invite) {
+      throw new ConflictException('No pudimos crear una invitación única');
+    }
 
     return this.serialize(invite);
   }
@@ -116,9 +137,22 @@ export class InvitesService {
       throw new NotFoundException('Lista no encontrada');
     }
 
-    await this.dataSource.transaction(async (manager) => {
+    const joinResult = await this.dataSource.transaction(async (manager) => {
       const inviteRepo = manager.getRepository(this.inviteRepo.target);
       const memberRepo = manager.getRepository(this.memberRepo.target);
+      const existingMembership = await memberRepo.findOneBy({
+        userId,
+        watchListId: invite.watchListId,
+      });
+
+      if (existingMembership) {
+        return {
+          ok: true,
+          alreadyMember: true,
+          watchListId: invite.watchListId,
+          message: 'Ya eres parte de esta lista',
+        };
+      }
 
       const claim = await inviteRepo.update(
         {
@@ -134,21 +168,36 @@ export class InvitesService {
         throw new ConflictException('Esta invitación ya fue usada');
       }
 
-      await memberRepo.save(
-        memberRepo.create({
+      try {
+        await memberRepo.save(
+          memberRepo.create({
+            watchListId: invite.watchListId,
+            userId,
+            role: 'member',
+          }),
+        );
+      } catch (error) {
+        if (!this.isUniqueConstraintViolation(error)) {
+          throw error;
+        }
+
+        return {
+          ok: true,
+          alreadyMember: true,
           watchListId: invite.watchListId,
-          userId,
-          role: 'member',
-        }),
-      );
+          message: 'Ya eres parte de esta lista',
+        };
+      }
+
+      return {
+        ok: true,
+        alreadyMember: false,
+        watchListId: invite.watchListId,
+        message: 'Te uniste a la lista',
+      };
     });
 
-    return {
-      ok: true,
-      alreadyMember: false,
-      watchListId: invite.watchListId,
-      message: 'Te uniste a la lista',
-    };
+    return joinResult;
   }
 
   private async assertOwner(userId: number, watchListId: number) {
@@ -187,5 +236,14 @@ export class InvitesService {
 
   private generateToken() {
     return randomBytes(32).toString('base64url');
+  }
+
+  private isUniqueConstraintViolation(error: unknown) {
+    const code =
+      typeof error === 'object' && error !== null && 'code' in error
+        ? String(error.code)
+        : null;
+
+    return code === '23505' || code === 'SQLITE_CONSTRAINT_UNIQUE';
   }
 }

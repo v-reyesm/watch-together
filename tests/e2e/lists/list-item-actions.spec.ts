@@ -7,7 +7,40 @@ const user = {
   avatarUrl: null,
 };
 
-const watchedItem = {
+type TestWatchItem = {
+  id: number;
+  providerName: string;
+  providerId: number;
+  mediaType: "movie" | "tv";
+  title: string;
+  translatedTitle: string;
+  year: number;
+  posterUrl: string;
+  overview: string;
+  originalLanguage: string;
+  rating: number;
+  status: "pending" | "watchedTogether" | "watchedAlone";
+  watchedAt: string | null;
+};
+
+type TestWatchList = {
+  id: number;
+  name: string;
+  description: string;
+  members: Array<{
+    id: number;
+    name: string;
+    email: string;
+    role: "owner" | "member";
+    initials: string;
+  }>;
+  itemCount: number;
+  pendingCount: number;
+  watchedCount: number;
+  items: TestWatchItem[];
+};
+
+const watchedItem: TestWatchItem = {
   id: 10,
   providerName: "tmdb",
   providerId: 666277,
@@ -23,7 +56,7 @@ const watchedItem = {
   watchedAt: "2026-01-01T00:00:00.000Z",
 };
 
-const watchedList = {
+const watchedList: TestWatchList = {
   id: 5,
   name: "Noches de viernes",
   description: "Películas para dos",
@@ -42,14 +75,14 @@ const watchedList = {
   items: [watchedItem],
 };
 
-const pendingList = {
+const pendingList: TestWatchList = {
   ...watchedList,
   pendingCount: 1,
   watchedCount: 0,
   items: [{ ...watchedItem, status: "pending", watchedAt: null }],
 };
 
-const emptyList = {
+const emptyList: TestWatchList = {
   ...watchedList,
   itemCount: 0,
   pendingCount: 0,

@@ -35,7 +35,11 @@ export class InvitesService {
 
     let invite: Invite | null = null;
 
-    for (let attempt = 0; attempt < InvitesService.MAX_TOKEN_RETRIES; attempt += 1) {
+    for (
+      let attempt = 0;
+      attempt < InvitesService.MAX_TOKEN_RETRIES;
+      attempt += 1
+    ) {
       try {
         invite = await this.inviteRepo.save(
           this.inviteRepo.create({

@@ -1,47 +1,56 @@
 import { ConflictException, ForbiddenException } from '@nestjs/common';
-import { ObjectLiteral } from 'typeorm';
-import { DataSource, Repository } from 'typeorm';
+import { DataSource, EntityManager, Repository } from 'typeorm';
 import { Invite } from './entities/invite.entity';
 import { InvitesService } from './invites.service';
 import { WatchListMember } from '../watch-list/entities/watch-list-member.entity';
 import { WatchList } from '../watch-list/entities/watch-list.entity';
 
-type MockRepo<T extends ObjectLiteral> = Partial<
-  Record<keyof Repository<T>, jest.Mock>
+type InviteRepoMock = Pick<
+  Repository<Invite>,
+  'create' | 'save' | 'findOne' | 'find' | 'findOneBy' | 'target'
+>;
+type WatchListRepoMock = Pick<Repository<WatchList>, 'findOneBy' | 'existsBy'>;
+type MemberRepoMock = Pick<
+  Repository<WatchListMember>,
+  'create' | 'save' | 'findOneBy' | 'target'
 >;
 
-function createRepo<T extends ObjectLiteral>(): MockRepo<T> {
-  return {
-    create: jest.fn((value) => value),
-    save: jest.fn(),
-    findOne: jest.fn(),
-    findOneBy: jest.fn(),
-    find: jest.fn(),
-    existsBy: jest.fn(),
-    update: jest.fn(),
-    target: jest.fn(),
-  };
-}
-
 describe('InvitesService', () => {
-  let inviteRepo: MockRepo<Invite>;
-  let watchListRepo: MockRepo<WatchList>;
-  let memberRepo: MockRepo<WatchListMember>;
+  let inviteRepo: InviteRepoMock;
+  let watchListRepo: WatchListRepoMock;
+  let memberRepo: MemberRepoMock;
   let dataSource: Pick<DataSource, 'transaction'>;
   let service: InvitesService;
 
   beforeEach(() => {
-    inviteRepo = createRepo<Invite>();
-    watchListRepo = createRepo<WatchList>();
-    memberRepo = createRepo<WatchListMember>();
+    inviteRepo = {
+      create: jest.fn((value: Partial<Invite>) => value as Invite),
+      save: jest.fn(),
+      findOne: jest.fn(),
+      find: jest.fn(),
+      findOneBy: jest.fn(),
+      target: Invite,
+    };
+    watchListRepo = {
+      findOneBy: jest.fn(),
+      existsBy: jest.fn(),
+    };
+    memberRepo = {
+      create: jest.fn(
+        (value: Partial<WatchListMember>) => value as WatchListMember,
+      ),
+      save: jest.fn(),
+      findOneBy: jest.fn(),
+      target: WatchListMember,
+    };
     dataSource = {
       transaction: jest.fn(),
     };
 
     service = new InvitesService(
-      inviteRepo as unknown as Repository<Invite>,
-      watchListRepo as unknown as Repository<WatchList>,
-      memberRepo as unknown as Repository<WatchListMember>,
+      inviteRepo as Repository<Invite>,
+      watchListRepo as Repository<WatchList>,
+      memberRepo as Repository<WatchListMember>,
       dataSource as DataSource,
     );
   });
@@ -55,14 +64,17 @@ describe('InvitesService', () => {
       )
       .mockReturnValueOnce('first-token')
       .mockReturnValueOnce('second-token');
-    (watchListRepo.findOneBy as jest.Mock).mockResolvedValue({ id: 5 });
-    (memberRepo.findOneBy as jest.Mock).mockResolvedValue({
+    jest
+      .spyOn(watchListRepo, 'findOneBy')
+      .mockResolvedValue({ id: 5 } as WatchList);
+    jest.spyOn(memberRepo, 'findOneBy').mockResolvedValue({
       id: 1,
       userId: 7,
       watchListId: 5,
       role: 'owner',
-    });
-    (inviteRepo.save as jest.Mock)
+    } as WatchListMember);
+    jest
+      .spyOn(inviteRepo, 'save')
       .mockRejectedValueOnce({ code: '23505' })
       .mockResolvedValueOnce({
         id: 10,
@@ -73,7 +85,7 @@ describe('InvitesService', () => {
         revokedAt: null,
         usedAt: null,
         createdAt: new Date('2026-06-02T00:00:00.000Z'),
-      });
+      } as Invite);
 
     const result = await service.create(7, 5);
 
@@ -88,14 +100,16 @@ describe('InvitesService', () => {
         'generateToken',
       )
       .mockReturnValue('same-token');
-    (watchListRepo.findOneBy as jest.Mock).mockResolvedValue({ id: 5 });
-    (memberRepo.findOneBy as jest.Mock).mockResolvedValue({
+    jest
+      .spyOn(watchListRepo, 'findOneBy')
+      .mockResolvedValue({ id: 5 } as WatchList);
+    jest.spyOn(memberRepo, 'findOneBy').mockResolvedValue({
       id: 1,
       userId: 7,
       watchListId: 5,
       role: 'owner',
-    });
-    (inviteRepo.save as jest.Mock).mockRejectedValue({ code: '23505' });
+    } as WatchListMember);
+    jest.spyOn(inviteRepo, 'save').mockRejectedValue({ code: '23505' });
 
     await expect(service.create(7, 5)).rejects.toEqual(
       new ConflictException('No pudimos crear una invitación única'),
@@ -112,28 +126,35 @@ describe('InvitesService', () => {
       revokedAt: null,
       usedAt: null,
       createdAt: new Date('2026-06-02T00:00:00.000Z'),
-    };
+    } as Invite;
     const txInviteRepo = {
-      findOneBy: jest.fn().mockResolvedValue(null),
       update: jest.fn().mockResolvedValue({ affected: 1 }),
     };
     const txMemberRepo = {
       findOneBy: jest.fn().mockResolvedValue(null),
-      create: jest.fn((value) => value),
+      create: jest.fn(
+        (value: Partial<WatchListMember>) => value as WatchListMember,
+      ),
       save: jest.fn().mockRejectedValue({ code: '23505' }),
     };
+    const txManager = {
+      getRepository: (target: unknown) => {
+        if (target === inviteRepo.target) return txInviteRepo;
+        if (target === memberRepo.target) return txMemberRepo;
+        throw new Error('Unexpected target');
+      },
+    } as unknown as EntityManager;
 
-    (inviteRepo.findOne as jest.Mock).mockResolvedValue(invite);
-    (watchListRepo.existsBy as jest.Mock).mockResolvedValue(true);
-    (dataSource.transaction as jest.Mock).mockImplementation(async (callback) =>
-      callback({
-        getRepository: (target: unknown) => {
-          if (target === inviteRepo.target) return txInviteRepo;
-          if (target === memberRepo.target) return txMemberRepo;
-          throw new Error('Unexpected target');
-        },
-      }),
-    );
+    jest.spyOn(inviteRepo, 'findOne').mockResolvedValue(invite);
+    jest.spyOn(memberRepo, 'findOneBy').mockResolvedValue(null);
+    jest.spyOn(watchListRepo, 'existsBy').mockResolvedValue(true);
+    jest
+      .spyOn(dataSource, 'transaction')
+      .mockImplementation(
+        async <T>(
+          runInTransaction: (entityManager: EntityManager) => Promise<T>,
+        ) => runInTransaction(txManager),
+      );
 
     const result = await service.join(9, 'invite-token');
 
@@ -146,7 +167,7 @@ describe('InvitesService', () => {
   });
 
   it('still rejects revoked invites before the transaction', async () => {
-    (inviteRepo.findOne as jest.Mock).mockResolvedValue({
+    jest.spyOn(inviteRepo, 'findOne').mockResolvedValue({
       id: 12,
       watchListId: 5,
       token: 'invite-token',
@@ -154,7 +175,8 @@ describe('InvitesService', () => {
       revokedAt: new Date('2026-06-02T00:00:00.000Z'),
       usedAt: null,
       createdAt: new Date('2026-06-02T00:00:00.000Z'),
-    });
+    } as Invite);
+    jest.spyOn(memberRepo, 'findOneBy').mockResolvedValue(null);
 
     await expect(service.join(9, 'invite-token')).rejects.toEqual(
       new ForbiddenException('Esta invitación fue revocada'),

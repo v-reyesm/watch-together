@@ -124,4 +124,45 @@ test.describe("invite links", () => {
       "/lists?list=5",
     );
   });
+
+  test("keeps an invite token through sign-in", async ({ page }) => {
+    await page.route("**/api/auth/login", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ accessToken: "playwright-token" }),
+      });
+    });
+    await page.route("**/api/users/me", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(user),
+      });
+    });
+    await page.route("**/api/invites/invite-token/join", async (route) => {
+      await route.fulfill({
+        status: 201,
+        contentType: "application/json",
+        body: JSON.stringify({
+          ok: true,
+          alreadyMember: false,
+          watchListId: 5,
+          message: "Te uniste a la lista",
+        }),
+      });
+    });
+
+    await page.goto("/invites/invite-token");
+
+    await expect(page).toHaveURL(
+      /\/sign-in\?next=%2Finvites%2Finvite-token$/,
+    );
+    await page.getByLabel("Email").fill(user.email);
+    await page.getByLabel("Contraseña").fill("password123");
+    await page.getByRole("button", { name: "Iniciar sesión" }).click();
+
+    await expect(page).toHaveURL("/invites/invite-token");
+    await expect(page.getByText("Te uniste a la lista")).toBeVisible();
+  });
 });

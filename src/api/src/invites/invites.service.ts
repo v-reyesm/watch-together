@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { randomBytes } from 'crypto';
-import { Repository } from 'typeorm';
+import { DataSource, IsNull, MoreThan, Repository } from 'typeorm';
 import { Invite } from './entities/invite.entity';
 import { WatchListMember } from '../watch-list/entities/watch-list-member.entity';
 import { WatchList } from '../watch-list/entities/watch-list.entity';
@@ -22,6 +22,7 @@ export class InvitesService {
     private readonly watchListRepo: Repository<WatchList>,
     @InjectRepository(WatchListMember)
     private readonly memberRepo: Repository<WatchListMember>,
+    private readonly dataSource: DataSource,
   ) {}
 
   async create(userId: number, watchListId: number) {
@@ -115,16 +116,32 @@ export class InvitesService {
       throw new NotFoundException('Lista no encontrada');
     }
 
-    await this.memberRepo.save(
-      this.memberRepo.create({
-        watchListId: invite.watchListId,
-        userId,
-        role: 'member',
-      }),
-    );
+    await this.dataSource.transaction(async (manager) => {
+      const inviteRepo = manager.getRepository(this.inviteRepo.target);
+      const memberRepo = manager.getRepository(this.memberRepo.target);
 
-    invite.usedAt = new Date();
-    await this.inviteRepo.save(invite);
+      const claim = await inviteRepo.update(
+        {
+          id: invite.id,
+          revokedAt: IsNull(),
+          usedAt: IsNull(),
+          expiresAt: MoreThan(new Date()),
+        },
+        { usedAt: new Date() },
+      );
+
+      if (claim.affected !== 1) {
+        throw new ConflictException('Esta invitación ya fue usada');
+      }
+
+      await memberRepo.save(
+        memberRepo.create({
+          watchListId: invite.watchListId,
+          userId,
+          role: 'member',
+        }),
+      );
+    });
 
     return {
       ok: true,

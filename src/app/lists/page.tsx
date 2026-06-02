@@ -34,6 +34,7 @@ export default function ListsPage() {
   const [lists, setLists] = useState<ApiWatchList[]>([]);
   const [currentList, setCurrentList] = useState<ApiWatchList | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [inviteUrl, setInviteUrl] = useState<string | null>(null);
   const [inviteMessage, setInviteMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -81,6 +82,7 @@ export default function ListsPage() {
 
   async function handleCreateInvite() {
     if (!currentList) return;
+    setInviteUrl(null);
     setInviteMessage(null);
     const { data, error: apiError } = await createInvite(currentList.id);
     if (!data) {
@@ -89,9 +91,14 @@ export default function ListsPage() {
     }
 
     const inviteUrl = `${window.location.origin}/invites/${data.token}`;
-    await navigator.clipboard?.writeText(inviteUrl);
+    setInviteUrl(inviteUrl);
     setError(null);
-    setInviteMessage("Invitación creada y enlace copiado.");
+    try {
+      await navigator.clipboard?.writeText(inviteUrl);
+      setInviteMessage("Invitación creada y enlace copiado.");
+    } catch {
+      setInviteMessage("Invitación creada. Copia el enlace para compartirlo.");
+    }
   }
 
   async function handleUndoWatch(itemId: number | undefined) {
@@ -188,7 +195,15 @@ export default function ListsPage() {
         ) : null}
         {inviteMessage ? (
           <div role="status" className="rounded-lg border bg-card p-3 text-sm">
-            {inviteMessage}
+            <p>{inviteMessage}</p>
+            {inviteUrl ? (
+              <a
+                href={inviteUrl}
+                className="mt-2 block break-all text-primary underline-offset-4 hover:underline"
+              >
+                {inviteUrl}
+              </a>
+            ) : null}
           </div>
         ) : null}
 

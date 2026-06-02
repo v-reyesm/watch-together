@@ -495,5 +495,24 @@ describe('Watch lists (e2e)', () => {
       name: 'Lista compartida',
     });
     expect(partnerLists[0].members).toHaveLength(2);
+
+    const otherUser = await userRepo.save(
+      userRepo.create({
+        email: 'other@example.com',
+        name: 'Other User',
+        passwordHash: null,
+        avatarUrl: null,
+        googleId: null,
+      }),
+    );
+    const otherToken = jwtService.sign({
+      sub: otherUser.id,
+      email: otherUser.email,
+    });
+
+    await request(app.getHttpServer())
+      .post(`/api/invites/${inviteBody.token}/join`)
+      .set('Authorization', `Bearer ${otherToken}`)
+      .expect(409);
   });
 });

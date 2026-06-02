@@ -12,6 +12,7 @@ import {
   SortPills,
 } from "@/components/watch-ui";
 import {
+  createInvite,
   getWatchList,
   getWatchLists,
   markListItemWatched,
@@ -25,6 +26,7 @@ export default function ListsPage() {
   const [lists, setLists] = useState<ApiWatchList[]>([]);
   const [currentList, setCurrentList] = useState<ApiWatchList | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [inviteMessage, setInviteMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   async function loadLists() {
@@ -69,6 +71,21 @@ export default function ListsPage() {
     }
   }
 
+  async function handleCreateInvite() {
+    if (!currentList) return;
+    setInviteMessage(null);
+    const { data, error: apiError } = await createInvite(currentList.id);
+    if (!data) {
+      setError(apiError ?? "No pudimos crear la invitación.");
+      return;
+    }
+
+    const inviteUrl = `${window.location.origin}/invites/${data.token}`;
+    await navigator.clipboard?.writeText(inviteUrl);
+    setError(null);
+    setInviteMessage("Invitación creada y enlace copiado.");
+  }
+
   if (!loading && !currentList) {
     return (
       <div className="container flex max-w-3xl flex-col gap-4 py-10">
@@ -111,7 +128,7 @@ export default function ListsPage() {
               variant="outline"
               size="sm"
               className="rounded-full"
-              disabled
+              onClick={handleCreateInvite}
             >
               <LinkIcon className="size-4" />
               Invitar
@@ -130,6 +147,11 @@ export default function ListsPage() {
         {error ? (
           <div role="alert" className="rounded-lg border bg-card p-3 text-sm">
             {error}
+          </div>
+        ) : null}
+        {inviteMessage ? (
+          <div role="status" className="rounded-lg border bg-card p-3 text-sm">
+            {inviteMessage}
           </div>
         ) : null}
 

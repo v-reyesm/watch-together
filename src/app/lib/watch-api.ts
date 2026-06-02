@@ -91,6 +91,12 @@ export function addListItem(listId: number, item: AddListItemInput) {
   });
 }
 
+export function removeListItem(listId: number, itemId: number) {
+  return apiFetch<ApiWatchList>(`/api/watch-lists/${listId}/items/${itemId}`, {
+    method: "DELETE",
+  });
+}
+
 export function markListItemWatched(listId: number, itemId: number) {
   return apiFetch<ApiWatchList>(
     `/api/watch-lists/${listId}/items/${itemId}/watch-events`,

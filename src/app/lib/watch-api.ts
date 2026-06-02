@@ -72,6 +72,18 @@ export type AddListItemInput = {
   rating?: number;
 };
 
+export type CreateWatchListInput = {
+  name: string;
+  description?: string;
+};
+
+export function createWatchList(input: CreateWatchListInput) {
+  return apiFetch<ApiWatchList>("/api/watch-lists", {
+    method: "POST",
+    body: input,
+  });
+}
+
 export function getWatchSummary() {
   return apiFetch<ApiWatchSummary>("/api/watch-lists/summary");
 }

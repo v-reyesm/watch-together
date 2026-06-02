@@ -191,6 +191,7 @@ describe('Watch lists (e2e)', () => {
   let jwtService: JwtService;
   let userRepo: Repository<TestUser>;
   let token: string;
+  let otherToken: string;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -291,6 +292,20 @@ describe('Watch lists (e2e)', () => {
     );
     token = jwtService.sign({ sub: user.id, email: user.email });
 
+    const otherUser = await userRepo.save(
+      userRepo.create({
+        email: 'other@example.com',
+        name: 'Other User',
+        passwordHash: null,
+        avatarUrl: null,
+        googleId: null,
+      }),
+    );
+    otherToken = jwtService.sign({
+      sub: otherUser.id,
+      email: otherUser.email,
+    });
+
     await app.init();
   }, 30_000);
 
@@ -377,4 +392,98 @@ describe('Watch lists (e2e)', () => {
       status: 'watchedTogether',
     });
   });
+
+  it('returns 401 when list endpoints are called without auth', async () => {
+    const res = await request(app.getHttpServer())
+      .get('/api/watch-lists/summary')
+      .expect(401);
+
+    expect(res.body).toMatchObject({
+      statusCode: 401,
+      message: 'Unauthorized',
+    });
+  });
+
+  it('returns 403 when a non-member reads a list', async () => {
+    const listRes = await request(app.getHttpServer())
+      .post('/api/watch-lists')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ name: 'Lista privada', description: 'Solo owner' })
+      .expect(201);
+
+    const forbiddenRes = await request(app.getHttpServer())
+      .get(`/api/watch-lists/${listRes.body.id}`)
+      .set('Authorization', `Bearer ${otherToken}`)
+      .expect(403);
+
+    expect(forbiddenRes.body).toMatchObject({
+      statusCode: 403,
+      message: 'No tienes acceso a esta lista',
+    });
+  });
+
+  it('removes an item from a list', async () => {
+    const { listId, itemId } = await createListWithItem('Lista para quitar');
+
+    const removeRes = await request(app.getHttpServer())
+      .delete(`/api/watch-lists/${listId}/items/${itemId}`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+
+    expect(removeRes.body).toMatchObject({
+      itemCount: 0,
+      pendingCount: 0,
+      watchedCount: 0,
+      items: [],
+    });
+  });
+
+  it('undoes the latest watch event', async () => {
+    const { listId, itemId } = await createListWithItem('Lista para deshacer');
+
+    await request(app.getHttpServer())
+      .post(`/api/watch-lists/${listId}/items/${itemId}/watch-events`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(201);
+
+    const undoRes = await request(app.getHttpServer())
+      .delete(`/api/watch-lists/${listId}/items/${itemId}/watch-events/latest`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+
+    expect(undoRes.body).toMatchObject({
+      pendingCount: 1,
+      watchedCount: 0,
+    });
+    expect(undoRes.body.items[0]).toMatchObject({
+      status: 'pending',
+      watchedAt: null,
+    });
+  });
+
+  async function createListWithItem(name: string) {
+    const listRes = await request(app.getHttpServer())
+      .post('/api/watch-lists')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ name, description: 'Lista de prueba' })
+      .expect(201);
+
+    const providerId = Math.floor(Math.random() * 1_000_000);
+    const addRes = await request(app.getHttpServer())
+      .post(`/api/watch-lists/${listRes.body.id}/items`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        providerId,
+        mediaType: 'movie',
+        title: `Titulo ${providerId}`,
+        translatedTitle: `Titulo ${providerId}`,
+        releaseDate: '2024-01-01',
+      })
+      .expect(201);
+
+    return {
+      listId: listRes.body.id as number,
+      itemId: addRes.body.items[0].id as number,
+    };
+  }
 });

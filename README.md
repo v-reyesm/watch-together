@@ -39,6 +39,17 @@ watch-together/
 pnpm install
 ```
 
+Optional local git hooks with `pre-commit`:
+
+```bash
+pre-commit install --hook-type pre-commit --hook-type pre-push
+```
+
+Configured hooks:
+
+- `pre-commit`: frontend lint + API lint
+- `pre-push`: frontend typecheck + API typecheck
+
 ## Run in Development
 
 Run both frontend and backend:

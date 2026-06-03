@@ -26,6 +26,16 @@
 - UI shows watched status (alone vs together) and list context.
 - Runs via Docker Compose with documented env vars and a clean setup.
 
+## Progress Snapshot (2026-06-02)
+- Done: `WT-020` Create list (PR #7)
+- Done: `WT-022` List detail page (PR #8)
+- Done: `WT-030` Create invite link (PR #10)
+- Done: `WT-031` Join via invite link (PR #10)
+- Done: `WT-043` Remove item from list (PR #9)
+- Done: `WT-053` Undo / unwatch (PR #9)
+- Done: `WT-080` API auth guard + list authorization (PR #11)
+- Done: `WT-100` Tests for core flow (PR #11)
+
 ## Tickets (Grouped by Epic)
 
 ## Epic: Product, Architecture, and Contracts
@@ -101,6 +111,7 @@
 
 ### WT-020 (MVP, P0, M): Create list (API + UI)
 - Description: Create list with name/description and owner.
+- Status: Done in PR #7.
 - Acceptance criteria:
   - List appears on Home and Lists pages.
   - Owner is automatically a list member.
@@ -113,6 +124,7 @@
 
 ### WT-022 (MVP, P0, M): List detail page (route + UI)
 - Description: Implement list detail UI: list info, members, items, actions.
+- Status: Done in PR #8.
 - Acceptance criteria:
   - Route chosen (ex: `/lists/:id`).
   - Loading/error/empty states.
@@ -147,6 +159,7 @@
 
 ### WT-030 (MVP, P0, M): Create invite link
 - Description: Create join tokens with expiry and revoke support.
+- Status: Done in PR #10.
 - Acceptance criteria:
   - High entropy token.
   - Expiry behavior defined.
@@ -154,6 +167,7 @@
 
 ### WT-031 (MVP, P0, M): Join via invite link
 - Description: Accept invite token and add user to list.
+- Status: Done in PR #10.
 - Acceptance criteria:
   - Invalid/expired/revoked token shows friendly error.
   - Already-a-member is handled cleanly.
@@ -192,6 +206,7 @@
 
 ### WT-043 (MVP, P1, S): Remove item from list
 - Description: Remove an item from a list.
+- Status: Done in PR #9.
 - Acceptance criteria:
   - Confirmation required.
   - Produces audit log entry (minimal).
@@ -236,6 +251,7 @@
 
 ### WT-053 (MVP, P1, S): Undo / unwatch
 - Description: Allow correcting mistakes by undoing last watch action.
+- Status: Done in PR #9.
 - Acceptance criteria:
   - UI offers "undo".
   - API defines rule clearly (delete last event vs explicit unwatch state).
@@ -355,6 +371,7 @@
 
 ### WT-080 (MVP, P0, M): API auth guard + list authorization
 - Description: Enforce authentication and per-list authorization for all endpoints.
+- Status: Done in PR #11.
 - Acceptance criteria:
   - 401 and 403 are consistent.
   - Unauthorized access cannot read list details or items.
@@ -410,6 +427,7 @@
 
 ### WT-100 (MVP, P1, M): Tests for core flow
 - Description: Minimum tests that protect the MVP journey.
+- Status: Done in PR #11.
 - Acceptance criteria:
   - Backend: auth + create list + invite join + add item + mark watched.
   - Frontend: smoke tests for protected routing and core screens.

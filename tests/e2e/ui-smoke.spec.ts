@@ -16,6 +16,7 @@ const apiItem = {
   translatedTitle: "Past Lives",
   year: 2023,
   posterUrl: "",
+  summary: "Two childhood friends reconnect.",
   overview: "Two childhood friends reconnect.",
   originalLanguage: "en",
   rating: 7.8,

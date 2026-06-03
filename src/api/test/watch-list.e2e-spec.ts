@@ -50,6 +50,7 @@ type WatchListResponseBody = {
   id: number;
   name: string;
   members: unknown[];
+  items?: Array<Record<string, unknown>>;
 };
 
 @Entity({ name: 'users' })
@@ -102,6 +103,10 @@ class TestMedia {
   @Column()
   overview: string;
 
+  @ManyToMany(() => TestGenre)
+  @JoinTable()
+  genres: TestGenre[];
+
   @Column({ nullable: true })
   originalLanguage?: string;
 
@@ -128,6 +133,18 @@ class TestMedia {
 
   @UpdateDateColumn()
   updatedAt: Date;
+}
+
+@Entity({ name: 'genres' })
+class TestGenre {
+  @PrimaryGeneratedColumn()
+  id: number;
+
+  @Column()
+  name: string;
+
+  @Column()
+  tmdbId: number;
 }
 
 @Entity({ name: 'watch_lists' })
@@ -263,6 +280,7 @@ describe('Watch lists (e2e)', () => {
           database: ':memory:',
           entities: [
             TestUser,
+            TestGenre,
             TestMedia,
             TestWatchList,
             TestWatchListMember,
@@ -273,6 +291,7 @@ describe('Watch lists (e2e)', () => {
         }),
         TypeOrmModule.forFeature([
           TestUser,
+          TestGenre,
           TestMedia,
           TestWatchList,
           TestWatchListMember,
@@ -412,8 +431,12 @@ describe('Watch lists (e2e)', () => {
       providerName: 'tmdb',
       providerId: 666277,
       title: 'Past Lives',
+      summary: 'Two childhood friends reconnect.',
+      genres: [],
       status: 'pending',
     });
+    expect(addRes.body.items[0]).not.toHaveProperty('ranking');
+    expect(addRes.body.items[0]).not.toHaveProperty('votes');
 
     await request(app.getHttpServer())
       .post(`/api/watch-lists/${listRes.body.id}/items`)
@@ -436,6 +459,38 @@ describe('Watch lists (e2e)', () => {
       watchedCount: 0,
       pendingCount: 1,
     });
+
+    const detailRes = await request(app.getHttpServer())
+      .get(`/api/watch-lists/${listRes.body.id}`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+
+    expect(detailRes.body).toMatchObject({
+      id: listRes.body.id,
+      name: 'Noches de viernes',
+      description: 'Peliculas para dos',
+      members: [expect.objectContaining({ role: 'owner' })],
+      itemCount: 1,
+      pendingCount: 1,
+      watchedCount: 0,
+      items: [
+        expect.objectContaining({
+          providerName: 'tmdb',
+          providerId: 666277,
+          title: 'Past Lives',
+          year: 2023,
+          mediaType: 'movie',
+          posterUrl: 'https://image.tmdb.org/t/p/w500/example.jpg',
+          summary: 'Two childhood friends reconnect.',
+          overview: 'Two childhood friends reconnect.',
+          genres: [],
+          status: 'pending',
+          watchedAt: null,
+        }),
+      ],
+    });
+    expect(detailRes.body.items[0]).not.toHaveProperty('ranking');
+    expect(detailRes.body.items[0]).not.toHaveProperty('votes');
 
     const itemId = addRes.body.items[0].id as number;
     const watchedRes = await request(app.getHttpServer())
@@ -478,6 +533,18 @@ describe('Watch lists (e2e)', () => {
     expect(forbiddenRes.body).toMatchObject({
       statusCode: 403,
       message: 'No tienes acceso a esta lista',
+    });
+  });
+
+  it('returns 404 when the requested list does not exist', async () => {
+    const missingRes = await request(app.getHttpServer())
+      .get('/api/watch-lists/999999')
+      .set('Authorization', `Bearer ${token}`)
+      .expect(404);
+
+    expect(missingRes.body).toMatchObject({
+      statusCode: 404,
+      message: 'Lista no encontrada',
     });
   });
 

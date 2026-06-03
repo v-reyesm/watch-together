@@ -520,6 +520,42 @@ describe('Watch lists (e2e)', () => {
     });
   });
 
+  it('lets another list member undo the latest shared watch event', async () => {
+    const { listId, itemId } = await createListWithItem(
+      'Lista compartida para deshacer',
+    );
+
+    const inviteRes = await request(app.getHttpServer())
+      .post(`/api/watch-lists/${listId}/invites`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(201);
+    const inviteBody = inviteRes.body as unknown as InviteResponseBody;
+
+    await request(app.getHttpServer())
+      .post(`/api/invites/${inviteBody.token}/join`)
+      .set('Authorization', `Bearer ${otherToken}`)
+      .expect(201);
+
+    await request(app.getHttpServer())
+      .post(`/api/watch-lists/${listId}/items/${itemId}/watch-events`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(201);
+
+    const undoRes = await request(app.getHttpServer())
+      .delete(`/api/watch-lists/${listId}/items/${itemId}/watch-events/latest`)
+      .set('Authorization', `Bearer ${otherToken}`)
+      .expect(200);
+
+    expect(undoRes.body).toMatchObject({
+      pendingCount: 1,
+      watchedCount: 0,
+    });
+    expect(undoRes.body.items[0]).toMatchObject({
+      status: 'pending',
+      watchedAt: null,
+    });
+  });
+
   it('creates an invite and lets another user join the list', async () => {
     const listRes = await request(app.getHttpServer())
       .post('/api/watch-lists')

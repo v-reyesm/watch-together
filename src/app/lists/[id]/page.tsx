@@ -10,8 +10,13 @@ import {
   MemberStack,
   PosterGridCard,
   SortPills,
+  type WatchItem,
 } from "@/components/watch-ui";
-import { getWatchList, markListItemWatched } from "@/lib/watch-api";
+import {
+  getWatchList,
+  markListItemWatched,
+  undoLatestWatch,
+} from "@/lib/watch-api";
 import type { ApiWatchList } from "@/lib/watch-api";
 import { itemFromApi } from "@/lib/watch-mappers";
 
@@ -44,12 +49,13 @@ export default function ListDetailPage() {
   const items = useMemo(() => list?.items.map(itemFromApi) ?? [], [list]);
   const members = list?.members.map((member) => member.initials || "?") ?? [];
 
-  async function handleMarkWatched(itemId: number | undefined) {
-    if (!list || !itemId) return;
-    const { data, error: apiError } = await markListItemWatched(
-      list.id,
-      itemId,
-    );
+  async function handleToggleWatched(item: WatchItem) {
+    if (!list || !item.numericId) return;
+    const request =
+      item.status === "pending"
+        ? markListItemWatched(list.id, item.numericId)
+        : undoLatestWatch(list.id, item.numericId);
+    const { data, error: apiError } = await request;
     setError(apiError ?? null);
     if (data) {
       setList(data);
@@ -165,7 +171,7 @@ export default function ListDetailPage() {
                 key={item.id}
                 item={item}
                 rank={index + 1}
-                onMarkWatched={() => handleMarkWatched(item.numericId)}
+                onMarkWatched={handleToggleWatched}
               />
             ))}
           </section>

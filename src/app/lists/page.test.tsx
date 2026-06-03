@@ -6,7 +6,6 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import ListsPage from "./page";
 import {
-  createInvite,
   getWatchList,
   getWatchLists,
   removeListItem,
@@ -17,8 +16,17 @@ jest.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams("list=5"),
 }));
 
+jest.mock("@/lib/auth", () => ({
+  useAuth: () => ({
+    user: { id: 1, email: "ana@example.com", name: "Ana", avatarUrl: null },
+  }),
+}));
+
+jest.mock("@/components/invite-panel", () => ({
+  InvitePanel: () => <div data-testid="invite-panel" />,
+}));
+
 jest.mock("@/lib/watch-api", () => ({
-  createInvite: jest.fn(),
   getWatchLists: jest.fn(),
   getWatchList: jest.fn(),
   markListItemWatched: jest.fn(),
@@ -124,35 +132,14 @@ describe("ListsPage item actions", () => {
     expect(await screen.findByText("1 pendientes")).toBeInTheDocument();
   });
 
-  it("shows the invite link when clipboard is unavailable", async () => {
-    const expectedInviteUrl = `${window.location.origin}/invites/invite-token`;
-    Object.defineProperty(navigator, "clipboard", {
-      configurable: true,
-      value: undefined,
-    });
-    (createInvite as jest.Mock).mockResolvedValue({
-      data: {
-        id: 20,
-        watchListId: 5,
-        token: "invite-token",
-        expiresAt: "2026-06-09T00:00:00.000Z",
-        revokedAt: null,
-        usedAt: null,
-        createdAt: "2026-06-02T00:00:00.000Z",
-        status: "active",
-      },
-      status: 201,
-    });
-
+  it("shows the invite management section for owners", async () => {
     render(<ListsPage />);
 
     await screen.findByRole("heading", { name: "Noches de viernes" });
-    fireEvent.click(screen.getByRole("button", { name: /invitar/i }));
-
-    expect(
-      await screen.findByText("Invitación creada. Copia el enlace para compartirlo."),
-    ).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: expectedInviteUrl }))
-      .toHaveAttribute("href", expectedInviteUrl);
+    expect(screen.getByRole("link", { name: /invitar/i })).toHaveAttribute(
+      "href",
+      "#invite-panel",
+    );
+    expect(screen.getByTestId("invite-panel")).toBeInTheDocument();
   });
 });

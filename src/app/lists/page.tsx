@@ -11,6 +11,7 @@ import {
   Trash2Icon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { InvitePanel } from "@/components/invite-panel";
 import {
   ListTabs,
   MemberStack,
@@ -18,24 +19,23 @@ import {
   SortPills,
 } from "@/components/watch-ui";
 import {
-  createInvite,
   getWatchList,
   getWatchLists,
   markListItemWatched,
   removeListItem,
   undoLatestWatch,
 } from "@/lib/watch-api";
+import { useAuth } from "@/lib/auth";
 import type { ApiWatchList } from "@/lib/watch-api";
 import { itemFromApi } from "@/lib/watch-mappers";
 
 export default function ListsPage() {
+  const { user } = useAuth();
   const searchParams = useSearchParams();
   const selectedId = Number(searchParams.get("list"));
   const [lists, setLists] = useState<ApiWatchList[]>([]);
   const [currentList, setCurrentList] = useState<ApiWatchList | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [inviteUrl, setInviteUrl] = useState<string | null>(null);
-  const [inviteMessage, setInviteMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   async function loadLists() {
@@ -77,33 +77,6 @@ export default function ListsPage() {
     setError(apiError ?? null);
     if (data) {
       setCurrentList(data);
-    }
-  }
-
-  async function handleCreateInvite() {
-    if (!currentList) return;
-    setInviteUrl(null);
-    setInviteMessage(null);
-    const { data, error: apiError } = await createInvite(currentList.id);
-    if (!data) {
-      setError(apiError ?? "No pudimos crear la invitación.");
-      return;
-    }
-
-    const inviteUrl = `${window.location.origin}/invites/${data.token}`;
-    setInviteUrl(inviteUrl);
-    setError(null);
-    const clipboard = navigator.clipboard?.writeText;
-    if (!clipboard) {
-      setInviteMessage("Invitación creada. Copia el enlace para compartirlo.");
-      return;
-    }
-
-    try {
-      await clipboard.call(navigator.clipboard, inviteUrl);
-      setInviteMessage("Invitación creada y enlace copiado.");
-    } catch {
-      setInviteMessage("Invitación creada. Copia el enlace para compartirlo.");
     }
   }
 
@@ -150,6 +123,12 @@ export default function ListsPage() {
   const pending = currentList?.pendingCount ?? 0;
   const watched = currentList?.watchedCount ?? 0;
   const members = currentList?.members.map((member) => member.initials) ?? [];
+  const canManageInvites =
+    currentList != null &&
+    user != null &&
+    currentList.members.some(
+      (member) => member.id === user.id && member.role === "owner",
+    );
 
   return (
     <div className="flex min-h-full flex-col">
@@ -174,15 +153,14 @@ export default function ListsPage() {
           </div>
 
           <div className="flex flex-wrap gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              className="rounded-full"
-              onClick={handleCreateInvite}
-            >
-              <LinkIcon className="size-4" />
-              Invitar
-            </Button>
+            {canManageInvites ? (
+              <Button variant="outline" size="sm" className="rounded-full" asChild>
+                <a href="#invite-panel">
+                  <LinkIcon className="size-4" />
+                  Invitar
+                </a>
+              </Button>
+            ) : null}
             <Button asChild size="sm" className="rounded-full">
               <Link href="/search">
                 <PlusIcon className="size-4" />
@@ -197,19 +175,6 @@ export default function ListsPage() {
         {error ? (
           <div role="alert" className="rounded-lg border bg-card p-3 text-sm">
             {error}
-          </div>
-        ) : null}
-        {inviteMessage ? (
-          <div role="status" className="rounded-lg border bg-card p-3 text-sm">
-            <p>{inviteMessage}</p>
-            {inviteUrl ? (
-              <a
-                href={inviteUrl}
-                className="mt-2 block break-all text-primary underline-offset-4 hover:underline"
-              >
-                {inviteUrl}
-              </a>
-            ) : null}
           </div>
         ) : null}
 
@@ -237,6 +202,15 @@ export default function ListsPage() {
         </section>
 
         <ListTabs />
+
+        {currentList ? (
+          <InvitePanel
+            canManage={canManageInvites}
+            listId={currentList.id}
+            listName={currentList.name}
+            panelId="invite-panel"
+          />
+        ) : null}
 
         <section className="grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5">
           {items.map((item, index) => (

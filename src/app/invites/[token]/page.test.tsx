@@ -53,4 +53,24 @@ describe("JoinInvitePage", () => {
     expect(await screen.findByText("Esta invitación expiró")).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Ver lista" })).not.toBeInTheDocument();
   });
+
+  it("shows the already-member message and still links to the list", async () => {
+    (joinInvite as jest.Mock).mockResolvedValue({
+      data: {
+        ok: true,
+        alreadyMember: true,
+        watchListId: 12,
+        message: "Ya eres parte de esta lista",
+      },
+      status: 201,
+    });
+
+    render(<JoinInvitePage />);
+
+    expect(await screen.findByText("Ya eres parte de esta lista")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Ver lista" })).toHaveAttribute(
+      "href",
+      "/lists?list=12",
+    );
+  });
 });

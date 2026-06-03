@@ -2,14 +2,20 @@
  * @jest-environment jsdom
  */
 import React from "react";
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import Home from "./page";
-import { getWatchSummary } from "@/lib/watch-api";
+import { createInvite, getWatchSummary } from "@/lib/watch-api";
+import { useAuth } from "@/lib/auth";
 
 jest.mock("@/lib/watch-api", () => ({
+  createInvite: jest.fn(),
   getWatchSummary: jest.fn(),
   markListItemWatched: jest.fn(),
+}));
+
+jest.mock("@/lib/auth", () => ({
+  useAuth: jest.fn(),
 }));
 
 const summary = {
@@ -75,6 +81,9 @@ const summary = {
 describe("Home", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    (useAuth as jest.Mock).mockReturnValue({
+      user: { id: 1, email: "ana@example.com", name: "Ana", avatarUrl: null },
+    });
   });
 
   it("shows Spanish loading states while the dashboard summary loads", () => {
@@ -99,5 +108,41 @@ describe("Home", () => {
       expect(screen.getByText("1/2")).toBeInTheDocument();
     });
     expect(screen.getAllByText("Pendiente").length).toBeGreaterThan(0);
+  });
+
+  it("creates an invite from the dashboard banner", async () => {
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: undefined,
+    });
+    (getWatchSummary as jest.Mock).mockResolvedValue({
+      data: summary,
+      status: 200,
+    });
+    (createInvite as jest.Mock).mockResolvedValue({
+      data: {
+        id: 20,
+        watchListId: 5,
+        token: "invite-token",
+        expiresAt: "2026-06-09T00:00:00.000Z",
+        revokedAt: null,
+        usedAt: null,
+        createdAt: "2026-06-02T00:00:00.000Z",
+        status: "active",
+      },
+      status: 201,
+    });
+
+    render(<Home />);
+
+    await screen.findByText("Noches de viernes");
+    fireEvent.click(screen.getByRole("button", { name: /crear invitación/i }));
+
+    expect(
+      await screen.findByText("Invitación creada. Copia el enlace o compártelo por email."),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: /compartir por email/i }),
+    ).toBeInTheDocument();
   });
 });

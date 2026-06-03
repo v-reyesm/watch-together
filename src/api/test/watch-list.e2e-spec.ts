@@ -242,6 +242,7 @@ describe('Watch lists (e2e)', () => {
   let app: INestApplication;
   let jwtService: JwtService;
   let userRepo: Repository<TestUser>;
+  let inviteRepo: Repository<TestInvite>;
   let token: string;
   let otherToken: string;
 
@@ -338,6 +339,9 @@ describe('Watch lists (e2e)', () => {
     jwtService = moduleFixture.get<JwtService>(JwtService);
     userRepo = moduleFixture.get<Repository<TestUser>>(
       getRepositoryToken(TestUser),
+    );
+    inviteRepo = moduleFixture.get<Repository<TestInvite>>(
+      getRepositoryToken(TestInvite),
     );
 
     const user = await userRepo.save(
@@ -631,6 +635,102 @@ describe('Watch lists (e2e)', () => {
       .post(`/api/invites/${inviteBody.token}/join`)
       .set('Authorization', `Bearer ${otherToken}`)
       .expect(409);
+  });
+
+  it('lists invites for the owner and revokes them', async () => {
+    const listRes = await request(app.getHttpServer())
+      .post('/api/watch-lists')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ name: 'Lista con invitaciones', description: 'Para revisar' })
+      .expect(201);
+
+    const inviteRes = await request(app.getHttpServer())
+      .post(`/api/watch-lists/${listRes.body.id}/invites`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(201);
+
+    const listInvitesRes = await request(app.getHttpServer())
+      .get(`/api/watch-lists/${listRes.body.id}/invites`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+
+    expect(listInvitesRes.body).toEqual([
+      expect.objectContaining({
+        id: inviteRes.body.id,
+        watchListId: listRes.body.id,
+        status: 'active',
+      }),
+    ]);
+
+    const revokeRes = await request(app.getHttpServer())
+      .delete(`/api/watch-lists/${listRes.body.id}/invites/${inviteRes.body.id}`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+
+    expect(revokeRes.body).toMatchObject({
+      id: inviteRes.body.id,
+      watchListId: listRes.body.id,
+      status: 'revoked',
+    });
+  });
+
+  it('returns friendly Spanish messages for invalid, expired, and revoked invite joins', async () => {
+    const invalidJoinRes = await request(app.getHttpServer())
+      .post('/api/invites/token-invalido/join')
+      .set('Authorization', `Bearer ${otherToken}`)
+      .expect(404);
+
+    expect(invalidJoinRes.body).toMatchObject({
+      statusCode: 404,
+      message: 'Invitación no encontrada',
+    });
+
+    const listRes = await request(app.getHttpServer())
+      .post('/api/watch-lists')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ name: 'Lista para errores', description: 'Invites' })
+      .expect(201);
+
+    const revokedInviteRes = await request(app.getHttpServer())
+      .post(`/api/watch-lists/${listRes.body.id}/invites`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(201);
+
+    await request(app.getHttpServer())
+      .delete(`/api/watch-lists/${listRes.body.id}/invites/${revokedInviteRes.body.id}`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+
+    const revokedJoinRes = await request(app.getHttpServer())
+      .post(`/api/invites/${revokedInviteRes.body.token}/join`)
+      .set('Authorization', `Bearer ${otherToken}`)
+      .expect(403);
+
+    expect(revokedJoinRes.body).toMatchObject({
+      statusCode: 403,
+      message: 'Esta invitación fue revocada',
+    });
+
+    const expiredInviteRes = await request(app.getHttpServer())
+      .post(`/api/watch-lists/${listRes.body.id}/invites`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(201);
+
+    const expiredInvite = await inviteRepo.findOneByOrFail({
+      id: expiredInviteRes.body.id as number,
+    });
+    expiredInvite.expiresAt = new Date('2020-01-01T00:00:00.000Z');
+    await inviteRepo.save(expiredInvite);
+
+    const expiredJoinRes = await request(app.getHttpServer())
+      .post(`/api/invites/${expiredInviteRes.body.token}/join`)
+      .set('Authorization', `Bearer ${otherToken}`)
+      .expect(403);
+
+    expect(expiredJoinRes.body).toMatchObject({
+      statusCode: 403,
+      message: 'Esta invitación expiró',
+    });
   });
 
   async function createListWithItem(name: string) {

@@ -11,11 +11,17 @@ import { PosterBlock, sampleItems, StatusChip } from "@/components/watch-ui";
 import { useAuth } from "@/lib/auth";
 import { apiFetch } from "@/lib/api";
 
+function isInternalPath(path: string | null): path is string {
+  return Boolean(path?.startsWith("/") && !path.startsWith("//"));
+}
+
 export default function SignInPage() {
   const { signIn } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const expired = searchParams.get("expired");
+  const nextPath = searchParams.get("next");
+  const redirectPath = isInternalPath(nextPath) ? nextPath : "/";
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -36,7 +42,7 @@ export default function SignInPage() {
 
     if (data?.accessToken) {
       await signIn(data.accessToken);
-      router.push("/");
+      router.push(redirectPath);
     } else {
       setError(apiError || "Credenciales inválidas");
     }
@@ -60,7 +66,7 @@ export default function SignInPage() {
 
     if (data?.accessToken) {
       await signIn(data.accessToken);
-      router.push("/");
+      router.push(redirectPath);
     } else {
       setError(apiError || "Error al iniciar sesión con Google");
     }

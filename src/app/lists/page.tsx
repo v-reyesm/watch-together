@@ -18,6 +18,7 @@ import {
   SortPills,
 } from "@/components/watch-ui";
 import {
+  createInvite,
   getWatchList,
   getWatchLists,
   markListItemWatched,
@@ -33,6 +34,8 @@ export default function ListsPage() {
   const [lists, setLists] = useState<ApiWatchList[]>([]);
   const [currentList, setCurrentList] = useState<ApiWatchList | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [inviteUrl, setInviteUrl] = useState<string | null>(null);
+  const [inviteMessage, setInviteMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   async function loadLists() {
@@ -74,6 +77,33 @@ export default function ListsPage() {
     setError(apiError ?? null);
     if (data) {
       setCurrentList(data);
+    }
+  }
+
+  async function handleCreateInvite() {
+    if (!currentList) return;
+    setInviteUrl(null);
+    setInviteMessage(null);
+    const { data, error: apiError } = await createInvite(currentList.id);
+    if (!data) {
+      setError(apiError ?? "No pudimos crear la invitación.");
+      return;
+    }
+
+    const inviteUrl = `${window.location.origin}/invites/${data.token}`;
+    setInviteUrl(inviteUrl);
+    setError(null);
+    const clipboard = navigator.clipboard?.writeText;
+    if (!clipboard) {
+      setInviteMessage("Invitación creada. Copia el enlace para compartirlo.");
+      return;
+    }
+
+    try {
+      await clipboard.call(navigator.clipboard, inviteUrl);
+      setInviteMessage("Invitación creada y enlace copiado.");
+    } catch {
+      setInviteMessage("Invitación creada. Copia el enlace para compartirlo.");
     }
   }
 
@@ -148,7 +178,7 @@ export default function ListsPage() {
               variant="outline"
               size="sm"
               className="rounded-full"
-              disabled
+              onClick={handleCreateInvite}
             >
               <LinkIcon className="size-4" />
               Invitar
@@ -167,6 +197,19 @@ export default function ListsPage() {
         {error ? (
           <div role="alert" className="rounded-lg border bg-card p-3 text-sm">
             {error}
+          </div>
+        ) : null}
+        {inviteMessage ? (
+          <div role="status" className="rounded-lg border bg-card p-3 text-sm">
+            <p>{inviteMessage}</p>
+            {inviteUrl ? (
+              <a
+                href={inviteUrl}
+                className="mt-2 block break-all text-primary underline-offset-4 hover:underline"
+              >
+                {inviteUrl}
+              </a>
+            ) : null}
           </div>
         ) : null}
 

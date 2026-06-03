@@ -33,6 +33,7 @@ import { AuthGuard } from "../components/auth/auth-guard";
 describe("AuthGuard", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    window.history.replaceState({}, "", "/");
     mockPathname = "/";
     mockAuthValue = {
       user: null,
@@ -61,7 +62,19 @@ describe("AuthGuard", () => {
         <div>Protected content</div>
       </AuthGuard>,
     );
-    expect(mockReplace).toHaveBeenCalledWith("/sign-in");
+    expect(mockReplace).toHaveBeenCalledWith("/sign-in?next=%2Fprofile");
+  });
+
+  it("preserves the invite path when redirecting to sign-in", () => {
+    mockPathname = "/invites/invite-token";
+    render(
+      <AuthGuard>
+        <div>Invite content</div>
+      </AuthGuard>,
+    );
+    expect(mockReplace).toHaveBeenCalledWith(
+      "/sign-in?next=%2Finvites%2Finvite-token",
+    );
   });
 
   it("renders children for authenticated user on protected route", () => {
@@ -87,6 +100,19 @@ describe("AuthGuard", () => {
       </AuthGuard>,
     );
     expect(mockReplace).toHaveBeenCalledWith("/");
+  });
+
+  it("redirects authenticated user from /sign-in to the next path", () => {
+    window.history.replaceState({}, "", "/sign-in?next=%2Finvites%2Fabc");
+    mockAuthValue.user = { id: 1, email: "a@b.com", name: "A", avatarUrl: null };
+    mockAuthValue.token = "tok";
+    mockPathname = "/sign-in";
+    render(
+      <AuthGuard>
+        <div>Sign in form</div>
+      </AuthGuard>,
+    );
+    expect(mockReplace).toHaveBeenCalledWith("/invites/abc");
   });
 
   it("allows unauthenticated user on /sign-in", () => {

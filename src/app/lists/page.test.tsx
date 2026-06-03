@@ -62,7 +62,10 @@ const baseList = {
 };
 
 describe("ListsPage item actions", () => {
+  let originalClipboardDescriptor: PropertyDescriptor | undefined;
+
   beforeEach(() => {
+    originalClipboardDescriptor = Object.getOwnPropertyDescriptor(navigator, "clipboard");
     jest.clearAllMocks();
     jest.spyOn(window, "confirm").mockReturnValue(true);
     (getWatchLists as jest.Mock).mockResolvedValue({
@@ -77,6 +80,12 @@ describe("ListsPage item actions", () => {
 
   afterEach(() => {
     jest.restoreAllMocks();
+    if (originalClipboardDescriptor) {
+      Object.defineProperty(navigator, "clipboard", originalClipboardDescriptor);
+      return;
+    }
+
+    Reflect.deleteProperty(navigator as object, "clipboard");
   });
 
   it("removes an item after confirmation", async () => {

@@ -101,7 +101,10 @@ export class WatchListService {
       watchedCount,
       pendingCount: Math.max(0, itemCount - watchedCount),
       lists,
-      highlightedItems: lists.flatMap((list) => list.items).slice(0, 6),
+      highlightedItems: lists
+        .flatMap((list) => list.items)
+        .filter((item) => item.status === 'pending')
+        .slice(0, 6),
     };
   }
 

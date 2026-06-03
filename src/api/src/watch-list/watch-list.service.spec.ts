@@ -36,4 +36,61 @@ describe('WatchListService', () => {
   it('should be defined', () => {
     expect(service).toBeDefined();
   });
+
+  it('returns only pending highlighted items in the dashboard summary', async () => {
+    jest.spyOn(service, 'findAll').mockResolvedValue([
+      {
+        id: 1,
+        name: 'Viernes',
+        description: '',
+        members: [],
+        itemCount: 2,
+        pendingCount: 1,
+        watchedCount: 1,
+        items: [
+          {
+            id: 10,
+            providerName: 'tmdb',
+            providerId: 100,
+            mediaType: 'movie',
+            title: 'Pendiente',
+            translatedTitle: 'Pendiente',
+            year: 2026,
+            posterUrl: '',
+            overview: '',
+            originalLanguage: 'es',
+            rating: 0,
+            status: 'pending',
+            watchedAt: null,
+          },
+          {
+            id: 11,
+            providerName: 'tmdb',
+            providerId: 101,
+            mediaType: 'movie',
+            title: 'Vista',
+            translatedTitle: 'Vista',
+            year: 2026,
+            posterUrl: '',
+            overview: '',
+            originalLanguage: 'es',
+            rating: 0,
+            status: 'watchedTogether',
+            watchedAt: '2026-06-01T00:00:00.000Z',
+          },
+        ],
+      },
+    ]);
+
+    const summary = await service.summary(1);
+
+    expect(summary).toMatchObject({
+      listCount: 1,
+      itemCount: 2,
+      watchedCount: 1,
+      pendingCount: 1,
+    });
+    expect(summary.highlightedItems).toHaveLength(1);
+    expect(summary.highlightedItems[0].title).toBe('Pendiente');
+  });
 });

@@ -100,6 +100,16 @@ export default function Home() {
             </Button>
           </div>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+            {loading ? (
+              <>
+                <div className="rounded-lg border bg-card p-4 text-sm text-muted-foreground">
+                  Cargando tus listas compartidas...
+                </div>
+                <div className="rounded-lg border bg-card p-4 text-sm text-muted-foreground">
+                  Preparando resumen de pendientes...
+                </div>
+              </>
+            ) : null}
             {lists.map((list) => (
               <WatchListCard key={list.id} list={list} />
             ))}
@@ -115,6 +125,11 @@ export default function Home() {
           <h2 className="text-lg font-semibold tracking-tight">
             Pendientes destacados
           </h2>
+          {loading ? (
+            <div className="rounded-lg border bg-card p-4 text-sm text-muted-foreground">
+              Cargando títulos pendientes...
+            </div>
+          ) : null}
           {highlightedItems.slice(0, 3).map((item) => (
             <WatchItemRow
               key={item.id}

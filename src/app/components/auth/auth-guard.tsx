@@ -6,6 +6,10 @@ import { useAuth } from "@/lib/auth";
 
 const PUBLIC_PATHS = ["/sign-in", "/register"];
 
+function isInternalPath(path: string | null): path is string {
+  return Boolean(path?.startsWith("/") && !path.startsWith("//"));
+}
+
 export function AuthGuard({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
   const router = useRouter();
@@ -19,13 +23,15 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     if (isLoading) return;
 
     if (!user && !isPublic) {
-      router.replace("/sign-in");
+      const next = `${pathname}${window.location.search}`;
+      router.replace(`/sign-in?next=${encodeURIComponent(next)}`);
     }
 
     if (user && isPublic) {
-      router.replace("/");
+      const next = new URLSearchParams(window.location.search).get("next");
+      router.replace(isInternalPath(next) ? next : "/");
     }
-  }, [user, isLoading, isPublic, router]);
+  }, [user, isLoading, isPublic, pathname, router]);
 
   if (isLoading) {
     return (

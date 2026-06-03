@@ -47,6 +47,26 @@ export type ApiWatchSummary = {
   highlightedItems: ApiWatchItem[];
 };
 
+export type ApiInviteStatus = "active" | "expired" | "revoked" | "used";
+
+export type ApiInvite = {
+  id: number;
+  watchListId: number;
+  token: string;
+  expiresAt: string;
+  revokedAt: string | null;
+  usedAt: string | null;
+  createdAt: string;
+  status: ApiInviteStatus;
+};
+
+export type ApiJoinInviteResult = {
+  ok: boolean;
+  alreadyMember: boolean;
+  watchListId: number;
+  message: string;
+};
+
 export type ApiSearchResult = {
   id: number;
   title: string;
@@ -72,6 +92,18 @@ export type AddListItemInput = {
   rating?: number;
 };
 
+export type CreateWatchListInput = {
+  name: string;
+  description?: string;
+};
+
+export function createWatchList(input: CreateWatchListInput) {
+  return apiFetch<ApiWatchList>("/api/watch-lists", {
+    method: "POST",
+    body: input,
+  });
+}
+
 export function getWatchSummary() {
   return apiFetch<ApiWatchSummary>("/api/watch-lists/summary");
 }
@@ -84,10 +116,39 @@ export function getWatchList(id: number) {
   return apiFetch<ApiWatchList>(`/api/watch-lists/${id}`);
 }
 
+export function createInvite(listId: number) {
+  return apiFetch<ApiInvite>(`/api/watch-lists/${listId}/invites`, {
+    method: "POST",
+  });
+}
+
+export function getInvites(listId: number) {
+  return apiFetch<ApiInvite[]>(`/api/watch-lists/${listId}/invites`);
+}
+
+export function revokeInvite(listId: number, inviteId: number) {
+  return apiFetch<ApiInvite>(
+    `/api/watch-lists/${listId}/invites/${inviteId}`,
+    { method: "DELETE" },
+  );
+}
+
+export function joinInvite(token: string) {
+  return apiFetch<ApiJoinInviteResult>(`/api/invites/${token}/join`, {
+    method: "POST",
+  });
+}
+
 export function addListItem(listId: number, item: AddListItemInput) {
   return apiFetch<ApiWatchList>(`/api/watch-lists/${listId}/items`, {
     method: "POST",
     body: { providerName: "tmdb", ...item },
+  });
+}
+
+export function removeListItem(listId: number, itemId: number) {
+  return apiFetch<ApiWatchList>(`/api/watch-lists/${listId}/items/${itemId}`, {
+    method: "DELETE",
   });
 }
 

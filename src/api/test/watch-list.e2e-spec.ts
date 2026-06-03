@@ -30,8 +30,27 @@ import { WatchListMember } from '../src/watch-list/entities/watch-list-member.en
 import { WatchList } from '../src/watch-list/entities/watch-list.entity';
 import { WatchListController } from '../src/watch-list/watch-list.controller';
 import { WatchListService } from '../src/watch-list/watch-list.service';
+import { Invite } from '../src/invites/entities/invite.entity';
+import { InvitesController } from '../src/invites/invites.controller';
+import { InvitesService } from '../src/invites/invites.service';
 
 const JWT_SECRET = 'test-jwt-secret-for-watch-list-e2e';
+
+type ListResponseBody = {
+  id: number;
+};
+
+type InviteResponseBody = {
+  token: string;
+  watchListId: number;
+  status: string;
+};
+
+type WatchListResponseBody = {
+  id: number;
+  name: string;
+  members: unknown[];
+};
 
 @Entity({ name: 'users' })
 class TestUser {
@@ -186,6 +205,39 @@ class TestWatchEvent {
   watchedAt: Date;
 }
 
+@Entity({ name: 'invites' })
+class TestInvite {
+  @PrimaryGeneratedColumn()
+  id: number;
+
+  @Column()
+  watchListId: number;
+
+  @ManyToOne(() => TestWatchList, { onDelete: 'CASCADE' })
+  watchList: TestWatchList;
+
+  @Column()
+  createdById: number;
+
+  @ManyToOne(() => TestUser, { onDelete: 'CASCADE' })
+  createdBy: TestUser;
+
+  @Column({ unique: true })
+  token: string;
+
+  @Column({ type: 'datetime' })
+  expiresAt: Date;
+
+  @Column({ type: 'datetime', nullable: true })
+  revokedAt: Date | null;
+
+  @Column({ type: 'datetime', nullable: true })
+  usedAt: Date | null;
+
+  @CreateDateColumn()
+  createdAt: Date;
+}
+
 describe('Watch lists (e2e)', () => {
   let app: INestApplication;
   let jwtService: JwtService;
@@ -215,6 +267,7 @@ describe('Watch lists (e2e)', () => {
             TestWatchList,
             TestWatchListMember,
             TestWatchEvent,
+            TestInvite,
           ],
           synchronize: true,
         }),
@@ -224,6 +277,7 @@ describe('Watch lists (e2e)', () => {
           TestWatchList,
           TestWatchListMember,
           TestWatchEvent,
+          TestInvite,
         ]),
         PassportModule.register({ defaultStrategy: 'jwt' }),
         JwtModule.register({
@@ -231,9 +285,10 @@ describe('Watch lists (e2e)', () => {
           signOptions: { expiresIn: '1h' },
         }),
       ],
-      controllers: [WatchListController],
+      controllers: [WatchListController, InvitesController],
       providers: [
         WatchListService,
+        InvitesService,
         JwtStrategy,
         {
           provide: getRepositoryToken(User),
@@ -254,6 +309,10 @@ describe('Watch lists (e2e)', () => {
         {
           provide: getRepositoryToken(WatchEvent),
           useExisting: getRepositoryToken(TestWatchEvent),
+        },
+        {
+          provide: getRepositoryToken(Invite),
+          useExisting: getRepositoryToken(TestInvite),
         },
         {
           provide: APP_GUARD,
@@ -459,6 +518,83 @@ describe('Watch lists (e2e)', () => {
       status: 'pending',
       watchedAt: null,
     });
+  });
+
+  it('creates an invite and lets another user join the list', async () => {
+    const listRes = await request(app.getHttpServer())
+      .post('/api/watch-lists')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ name: 'Lista compartida', description: 'Para invitar' })
+      .expect(201);
+    const listBody = listRes.body as unknown as ListResponseBody;
+
+    const inviteRes = await request(app.getHttpServer())
+      .post(`/api/watch-lists/${listBody.id}/invites`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(201);
+    const inviteBody = inviteRes.body as unknown as InviteResponseBody;
+
+    expect(inviteBody).toMatchObject({
+      watchListId: listBody.id,
+      status: 'active',
+    });
+    expect(inviteBody.token).toEqual(expect.any(String));
+
+    const partner = await userRepo.save(
+      userRepo.create({
+        email: 'partner@example.com',
+        name: 'Partner User',
+        passwordHash: null,
+        avatarUrl: null,
+        googleId: null,
+      }),
+    );
+    const partnerToken = jwtService.sign({
+      sub: partner.id,
+      email: partner.email,
+    });
+
+    const joinRes = await request(app.getHttpServer())
+      .post(`/api/invites/${inviteBody.token}/join`)
+      .set('Authorization', `Bearer ${partnerToken}`)
+      .expect(201);
+
+    expect(joinRes.body).toMatchObject({
+      ok: true,
+      alreadyMember: false,
+      watchListId: listBody.id,
+      message: 'Te uniste a la lista',
+    });
+
+    const secondJoinRes = await request(app.getHttpServer())
+      .post(`/api/invites/${inviteBody.token}/join`)
+      .set('Authorization', `Bearer ${partnerToken}`)
+      .expect(201);
+
+    expect(secondJoinRes.body).toMatchObject({
+      ok: true,
+      alreadyMember: true,
+      watchListId: listBody.id,
+      message: 'Ya eres parte de esta lista',
+    });
+
+    const partnerListsRes = await request(app.getHttpServer())
+      .get('/api/watch-lists')
+      .set('Authorization', `Bearer ${partnerToken}`)
+      .expect(200);
+    const partnerLists =
+      partnerListsRes.body as unknown as WatchListResponseBody[];
+
+    expect(partnerLists[0]).toMatchObject({
+      id: listBody.id,
+      name: 'Lista compartida',
+    });
+    expect(partnerLists[0].members).toHaveLength(2);
+
+    await request(app.getHttpServer())
+      .post(`/api/invites/${inviteBody.token}/join`)
+      .set('Authorization', `Bearer ${otherToken}`)
+      .expect(409);
   });
 
   async function createListWithItem(name: string) {

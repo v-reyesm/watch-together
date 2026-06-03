@@ -459,14 +459,15 @@ describe('Watch lists (e2e)', () => {
       watchedCount: 0,
       pendingCount: 1,
     });
+    const listBody = listRes.body as unknown as ListResponseBody;
 
     const detailRes = await request(app.getHttpServer())
-      .get(`/api/watch-lists/${listRes.body.id}`)
+      .get(`/api/watch-lists/${listBody.id}`)
       .set('Authorization', `Bearer ${token}`)
       .expect(200);
 
     expect(detailRes.body).toMatchObject({
-      id: listRes.body.id,
+      id: listBody.id,
       name: 'Noches de viernes',
       description: 'Peliculas para dos',
       members: [expect.objectContaining({ role: 'owner' })],

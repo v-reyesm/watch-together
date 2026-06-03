@@ -15,6 +15,16 @@ jest.mock("next/navigation", () => ({
   useParams: () => ({ id: "7" }),
 }));
 
+jest.mock("@/lib/auth", () => ({
+  useAuth: () => ({
+    user: { id: 1, email: "ana@example.com", name: "Ana", avatarUrl: null },
+  }),
+}));
+
+jest.mock("@/components/invite-panel", () => ({
+  InvitePanel: () => <div data-testid="invite-panel" />,
+}));
+
 jest.mock("@/lib/watch-api", () => ({
   getWatchList: jest.fn(),
   markListItemWatched: jest.fn(),
@@ -93,6 +103,10 @@ describe("ListDetailPage", () => {
     ).toBeInTheDocument();
     expect(screen.getByText("Películas para dos")).toBeInTheDocument();
     expect(screen.getByText("Esta lista aún no tiene títulos. Agrega uno desde búsqueda.")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /invitar/i })).toHaveAttribute(
+      "href",
+      "#invite-panel",
+    );
   });
 
   it("shows an error when the API cannot load the list", async () => {

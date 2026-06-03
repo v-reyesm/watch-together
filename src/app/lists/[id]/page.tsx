@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { ArrowLeftIcon, LinkIcon, PlusIcon, SearchIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { InvitePanel } from "@/components/invite-panel";
 import {
   ListTabs,
   MemberStack,
@@ -12,6 +13,7 @@ import {
   SortPills,
   type WatchItem,
 } from "@/components/watch-ui";
+import { useAuth } from "@/lib/auth";
 import {
   getWatchList,
   markListItemWatched,
@@ -21,6 +23,7 @@ import type { ApiWatchList } from "@/lib/watch-api";
 import { itemFromApi } from "@/lib/watch-mappers";
 
 export default function ListDetailPage() {
+  const { user } = useAuth();
   const params = useParams<{ id: string }>();
   const listId = Number(params.id);
   const [list, setList] = useState<ApiWatchList | null>(null);
@@ -48,6 +51,12 @@ export default function ListDetailPage() {
 
   const items = useMemo(() => list?.items.map(itemFromApi) ?? [], [list]);
   const members = list?.members.map((member) => member.initials || "?") ?? [];
+  const canManageInvites =
+    list != null &&
+    user != null &&
+    list.members.some(
+      (member) => member.id === user.id && member.role === "owner",
+    );
 
   async function handleToggleWatched(item: WatchItem) {
     if (!list || !item.numericId) return;
@@ -117,15 +126,19 @@ export default function ListDetailPage() {
           </div>
 
           <div className="flex flex-wrap gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              className="rounded-full"
-              disabled
-            >
-              <LinkIcon className="size-4" />
-              Invitar
-            </Button>
+            {canManageInvites ? (
+              <Button
+                variant="outline"
+                size="sm"
+                className="rounded-full"
+                asChild
+              >
+                <a href="#invite-panel">
+                  <LinkIcon className="size-4" />
+                  Invitar
+                </a>
+              </Button>
+            ) : null}
             <Button asChild size="sm" className="rounded-full">
               <Link href="/search">
                 <PlusIcon className="size-4" />
@@ -163,6 +176,13 @@ export default function ListDetailPage() {
         </section>
 
         <ListTabs />
+
+        <InvitePanel
+          canManage={canManageInvites}
+          listId={list.id}
+          listName={list.name}
+          panelId="invite-panel"
+        />
 
         {items.length ? (
           <section className="grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5">

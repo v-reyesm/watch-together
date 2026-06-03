@@ -10,7 +10,7 @@ repos:
 
       - id: api-lint
         name: API lint
-        entry: pnpm --dir src/api run lint
+        entry: pnpm --filter watch-together-backend run lint
         language: system
         pass_filenames: false
         stages: [pre-commit]
@@ -24,7 +24,7 @@ repos:
 
       - id: api-typecheck
         name: API typecheck
-        entry: pnpm --dir src/api exec tsc --noEmit
+        entry: pnpm --filter watch-together-backend exec tsc --noEmit
         language: system
         pass_filenames: false
         stages: [pre-push]

@@ -41,6 +41,8 @@ pnpm install
 
 Optional local git hooks with `pre-commit`:
 
+Install the `pre-commit` CLI first, for example with `pipx install pre-commit` or `brew install pre-commit`.
+
 ```bash
 pre-commit install --hook-type pre-commit --hook-type pre-push
 ```

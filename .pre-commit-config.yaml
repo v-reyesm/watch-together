@@ -1,0 +1,30 @@
+repos:
+  - repo: local
+    hooks:
+      - id: frontend-lint
+        name: Frontend lint
+        entry: pnpm lint
+        language: system
+        pass_filenames: false
+        stages: [pre-commit]
+
+      - id: api-lint
+        name: API lint
+        entry: pnpm --filter watch-together-backend run lint
+        language: system
+        pass_filenames: false
+        stages: [pre-commit]
+
+      - id: frontend-typecheck
+        name: Frontend typecheck
+        entry: pnpm exec tsc --noEmit
+        language: system
+        pass_filenames: false
+        stages: [pre-push]
+
+      - id: api-typecheck
+        name: API typecheck
+        entry: pnpm --filter watch-together-backend exec tsc --noEmit
+        language: system
+        pass_filenames: false
+        stages: [pre-push]

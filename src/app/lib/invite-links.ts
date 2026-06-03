@@ -16,6 +16,20 @@ export function buildInviteMailtoHref(listName: string, inviteUrl: string) {
   return `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 }
 
+export async function copyInviteText(value: string) {
+  const clipboard = navigator.clipboard?.writeText;
+  if (!clipboard) {
+    return false;
+  }
+
+  try {
+    await clipboard.call(navigator.clipboard, value);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export function inviteStatusLabel(status: "active" | "expired" | "revoked" | "used") {
   switch (status) {
     case "active":

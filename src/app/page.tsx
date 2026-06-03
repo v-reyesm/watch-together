@@ -13,7 +13,11 @@ import { CopyIcon, EyeIcon, LinkIcon, ListIcon, MailIcon, PlusIcon } from "lucid
 import { createInvite, getWatchSummary, markListItemWatched } from "@/lib/watch-api";
 import type { ApiWatchSummary } from "@/lib/watch-api";
 import { useAuth } from "@/lib/auth";
-import { buildInviteMailtoHref, buildInviteUrl } from "@/lib/invite-links";
+import {
+  buildInviteMailtoHref,
+  buildInviteUrl,
+  copyInviteText,
+} from "@/lib/invite-links";
 import { itemFromApi, listFromApi } from "@/lib/watch-mappers";
 
 export default function Home() {
@@ -75,19 +79,24 @@ export default function Home() {
     const nextInviteUrl = buildInviteUrl(data.token);
     setInviteUrl(nextInviteUrl);
     setError(null);
-
-    const clipboard = navigator.clipboard?.writeText;
-    if (!clipboard) {
-      setInviteMessage("Invitación creada. Copia el enlace o compártelo por email.");
+    const copied = await copyInviteText(nextInviteUrl);
+    if (copied) {
+      setInviteMessage("Invitación creada y enlace copiado.");
       return;
     }
 
-    try {
-      await clipboard.call(navigator.clipboard, nextInviteUrl);
-      setInviteMessage("Invitación creada y enlace copiado.");
-    } catch {
-      setInviteMessage("Invitación creada. Copia el enlace o compártelo por email.");
-    }
+    setInviteMessage("Invitación creada. Copia el enlace o compártelo por email.");
+  }
+
+  async function handleCopyInviteUrl() {
+    if (!inviteUrl) return;
+
+    const copied = await copyInviteText(inviteUrl);
+    setInviteMessage(
+      copied
+        ? "Enlace copiado."
+        : "No pudimos copiar el enlace. Copia la URL o compártela por email.",
+    );
   }
 
   return (
@@ -176,7 +185,7 @@ export default function Home() {
                 <Button
                   variant="outline"
                   size="xs"
-                  onClick={() => navigator.clipboard?.writeText(inviteUrl)}
+                  onClick={() => void handleCopyInviteUrl()}
                 >
                   <CopyIcon className="size-3" />
                   Copiar

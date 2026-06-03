@@ -12,6 +12,7 @@ import {
 import {
   buildInviteMailtoHref,
   buildInviteUrl,
+  copyInviteText,
   formatInviteDate,
   inviteStatusLabel,
 } from "@/lib/invite-links";
@@ -69,18 +70,13 @@ export function InvitePanel({
 
   async function copyInviteLink(invite: ApiInvite, successMessage: string) {
     const inviteUrl = buildInviteUrl(invite.token);
-    const clipboard = navigator.clipboard?.writeText;
-    if (!clipboard) {
-      setMessage("Invitación lista. Copia el enlace para compartirlo.");
+    const copied = await copyInviteText(inviteUrl);
+    if (copied) {
+      setMessage(successMessage);
       return;
     }
 
-    try {
-      await clipboard.call(navigator.clipboard, inviteUrl);
-      setMessage(successMessage);
-    } catch {
-      setMessage("Invitación lista. Copia el enlace para compartirlo.");
-    }
+    setMessage("Invitación lista. Copia el enlace para compartirlo.");
   }
 
   async function handleCreateInvite() {

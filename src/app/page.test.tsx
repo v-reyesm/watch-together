@@ -145,4 +145,44 @@ describe("Home", () => {
       screen.getByRole("link", { name: /compartir por email/i }),
     ).toBeInTheDocument();
   });
+
+  it("shows a fallback message when dashboard copy is rejected", async () => {
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: {
+        writeText: jest.fn().mockRejectedValue(new Error("denied")),
+      },
+    });
+    (getWatchSummary as jest.Mock).mockResolvedValue({
+      data: summary,
+      status: 200,
+    });
+    (createInvite as jest.Mock).mockResolvedValue({
+      data: {
+        id: 20,
+        watchListId: 5,
+        token: "invite-token",
+        expiresAt: "2026-06-09T00:00:00.000Z",
+        revokedAt: null,
+        usedAt: null,
+        createdAt: "2026-06-02T00:00:00.000Z",
+        status: "active",
+      },
+      status: 201,
+    });
+
+    render(<Home />);
+
+    await screen.findByText("Noches de viernes");
+    fireEvent.click(screen.getByRole("button", { name: /crear invitación/i }));
+    await screen.findByRole("button", { name: /copiar/i });
+
+    fireEvent.click(screen.getByRole("button", { name: /copiar/i }));
+
+    expect(
+      await screen.findByText(
+        "No pudimos copiar el enlace. Copia la URL o compártela por email.",
+      ),
+    ).toBeInTheDocument();
+  });
 });

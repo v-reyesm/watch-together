@@ -179,9 +179,14 @@ export class WatchListService {
   }
 
   async undoLatestWatch(userId: number, listId: number, itemId: number) {
-    await this.getAuthorizedList(userId, listId);
+    const list = await this.getAuthorizedList(userId, listId);
+    const media = list.items.find((item) => item.id === itemId);
+    if (!media) {
+      throw new NotFoundException('Titulo no encontrado en esta lista');
+    }
+
     const latest = await this.watchEventRepo.findOne({
-      where: { userId, watchListId: listId, mediaId: itemId },
+      where: { watchListId: listId, mediaId: itemId },
       order: { watchedAt: 'DESC' },
     });
 

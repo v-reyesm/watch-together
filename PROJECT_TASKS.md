@@ -26,7 +26,7 @@
 - UI shows watched status (alone vs together) and list context.
 - Runs via Docker Compose with documented env vars and a clean setup.
 
-## Progress Snapshot (2026-06-02)
+## Progress Snapshot (2026-06-03)
 - Done: `WT-020` Create list (PR #7)
 - Done: `WT-022` List detail page (PR #8)
 - Done: `WT-030` Create invite link (PR #10)
@@ -35,6 +35,8 @@
 - Done: `WT-053` Undo / unwatch (PR #9)
 - Done: `WT-080` API auth guard + list authorization (PR #11)
 - Done: `WT-100` Tests for core flow (PR #11)
+- Done: `WT-120` Home dashboard data endpoint for UI proposal (PR #14)
+- Done: `WT-123` Watch-state endpoints for list items (PR #15)
 
 ## Tickets (Grouped by Epic)
 
@@ -264,6 +266,7 @@
 
 ### WT-120 (MVP, P0, M): Home dashboard data endpoint for UI proposal
 - Description: Replace Home mock data with a backend-backed dashboard/list summary response.
+- Status: Done in PR #14.
 - Proposed endpoint(s):
   - `GET /watch-lists/summary` or extend `GET /watch-lists` with summary fields.
 - Acceptance criteria:
@@ -297,6 +300,7 @@
 
 ### WT-123 (MVP, P0, M): Watch-state endpoints for list items
 - Description: Power the proposal UI controls for "marcar vista" and watched-alone/watched-together context.
+- Status: Done in PR #15.
 - Proposed endpoint(s):
   - `POST /watch-lists/:id/items/:itemId/watch-events`
   - `DELETE /watch-lists/:id/items/:itemId/watch-events/latest` or another explicit undo endpoint from WT-053.

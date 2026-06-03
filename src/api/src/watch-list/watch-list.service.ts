@@ -70,17 +70,7 @@ export class WatchListService {
   }
 
   async findAll(userId: number) {
-    const memberships = await this.memberRepo.find({
-      where: { userId },
-      relations: {
-        watchList: {
-          watchListMembers: { user: true },
-          items: true,
-          watchEvents: true,
-        },
-      },
-      order: { id: 'ASC' },
-    });
+    const memberships = await this.findMembershipsWithListData(userId);
 
     return memberships.map((membership) =>
       this.serializeList(membership.watchList, userId, true),
@@ -88,7 +78,9 @@ export class WatchListService {
   }
 
   async summary(userId: number) {
-    const lists = await this.findAll(userId);
+    const memberships = await this.findMembershipsWithListData(userId);
+    const rawLists = memberships.map((membership) => membership.watchList);
+    const lists = rawLists.map((list) => this.serializeList(list, userId, true));
     const itemCount = lists.reduce((sum, list) => sum + list.itemCount, 0);
     const watchedCount = lists.reduce(
       (sum, list) => sum + list.watchedCount,
@@ -101,8 +93,12 @@ export class WatchListService {
       watchedCount,
       pendingCount: Math.max(0, itemCount - watchedCount),
       lists,
-      highlightedItems: lists
-        .flatMap((list) => list.items)
+      highlightedItems: rawLists
+        .flatMap((list) =>
+          (list.items ?? []).map((item) =>
+            this.serializeItem(item, list.watchEvents ?? [], userId),
+          ),
+        )
         .filter((item) => item.status === 'pending')
         .slice(0, 6),
     };
@@ -229,6 +225,20 @@ export class WatchListService {
     }
 
     return list;
+  }
+
+  private findMembershipsWithListData(userId: number) {
+    return this.memberRepo.find({
+      where: { userId },
+      relations: {
+        watchList: {
+          watchListMembers: { user: true },
+          items: true,
+          watchEvents: true,
+        },
+      },
+      order: { id: 'ASC' },
+    });
   }
 
   private async findOrCreateMedia(providerName: 'tmdb', dto: AddListItemDto) {

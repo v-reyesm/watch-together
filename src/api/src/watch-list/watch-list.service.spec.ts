@@ -19,6 +19,8 @@ describe('WatchListService', () => {
   };
 
   beforeEach(async () => {
+    jest.clearAllMocks();
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         WatchListService,
@@ -38,47 +40,40 @@ describe('WatchListService', () => {
   });
 
   it('returns only pending highlighted items in the dashboard summary', async () => {
-    jest.spyOn(service, 'findAll').mockResolvedValue([
+    const watchedAt = new Date('2026-06-01T00:00:00.000Z');
+    const items = Array.from({ length: 5 }, (_, index) => ({
+      id: index + 10,
+      providerName: 'tmdb',
+      providerId: index + 100,
+      mediaType: 'movie',
+      title: index === 4 ? 'Pendiente fuera del preview' : `Vista ${index + 1}`,
+      translatedTitle:
+        index === 4 ? 'Pendiente fuera del preview' : `Vista ${index + 1}`,
+      releaseDate: new Date('2026-01-01T00:00:00.000Z'),
+      posterUrl: '',
+      overview: '',
+      originalLanguage: 'es',
+      rating: 0,
+    }));
+    repo.find.mockResolvedValue([
       {
         id: 1,
-        name: 'Viernes',
-        description: '',
-        members: [],
-        itemCount: 2,
-        pendingCount: 1,
-        watchedCount: 1,
-        items: [
-          {
-            id: 10,
-            providerName: 'tmdb',
-            providerId: 100,
-            mediaType: 'movie',
-            title: 'Pendiente',
-            translatedTitle: 'Pendiente',
-            year: 2026,
-            posterUrl: '',
-            overview: '',
-            originalLanguage: 'es',
-            rating: 0,
-            status: 'pending',
-            watchedAt: null,
-          },
-          {
-            id: 11,
-            providerName: 'tmdb',
-            providerId: 101,
-            mediaType: 'movie',
-            title: 'Vista',
-            translatedTitle: 'Vista',
-            year: 2026,
-            posterUrl: '',
-            overview: '',
-            originalLanguage: 'es',
-            rating: 0,
-            status: 'watchedTogether',
-            watchedAt: '2026-06-01T00:00:00.000Z',
-          },
-        ],
+        userId: 1,
+        role: 'owner',
+        watchList: {
+          id: 1,
+          name: 'Viernes',
+          description: '',
+          watchListMembers: [],
+          items,
+          watchEvents: items.slice(0, 4).map((item) => ({
+            id: item.id + 1000,
+            userId: 1,
+            mediaId: item.id,
+            watchListId: 1,
+            watchedAt,
+          })),
+        },
       },
     ]);
 
@@ -86,11 +81,14 @@ describe('WatchListService', () => {
 
     expect(summary).toMatchObject({
       listCount: 1,
-      itemCount: 2,
-      watchedCount: 1,
+      itemCount: 5,
+      watchedCount: 4,
       pendingCount: 1,
     });
+    expect(summary.lists[0].items).toHaveLength(4);
     expect(summary.highlightedItems).toHaveLength(1);
-    expect(summary.highlightedItems[0].title).toBe('Pendiente');
+    expect(summary.highlightedItems[0].title).toBe(
+      'Pendiente fuera del preview',
+    );
   });
 });

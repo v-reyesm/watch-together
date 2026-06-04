@@ -12,7 +12,9 @@ export type ApiWatchItem = {
   translatedTitle: string;
   year: number | null;
   posterUrl: string;
+  summary: string;
   overview: string;
+  genres: string[];
   originalLanguage: string;
   rating: number;
   status: ApiWatchStatus;

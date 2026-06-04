@@ -26,7 +26,9 @@ type SerializedItem = {
   translatedTitle: string;
   year: number | null;
   posterUrl: string;
+  summary: string;
   overview: string;
+  genres: string[];
   originalLanguage: string;
   rating: number;
   status: WatchStatus;
@@ -206,7 +208,7 @@ export class WatchListService {
       where: { id },
       relations: {
         watchListMembers: { user: true },
-        items: true,
+        items: { genres: true },
         watchEvents: true,
       },
       order: {
@@ -238,11 +240,17 @@ export class WatchListService {
       relations: {
         watchList: {
           watchListMembers: { user: true },
-          items: true,
+          items: { genres: true },
           watchEvents: true,
         },
       },
-      order: { id: 'ASC' },
+      order: {
+        id: 'ASC',
+        watchList: {
+          items: { id: 'ASC' },
+          watchEvents: { watchedAt: 'DESC' },
+        },
+      },
     });
   }
 
@@ -325,7 +333,9 @@ export class WatchListService {
       translatedTitle: item.translatedTitle,
       year: this.yearFromDate(item.releaseDate),
       posterUrl: item.posterUrl,
+      summary: item.overview,
       overview: item.overview,
+      genres: (item.genres ?? []).map((genre) => genre.name),
       originalLanguage: item.originalLanguage ?? '',
       rating: item.rating ?? 0,
       status,

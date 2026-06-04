@@ -16,7 +16,9 @@ type TestWatchItem = {
   translatedTitle: string;
   year: number;
   posterUrl: string;
+  summary: string;
   overview: string;
+  genres: string[];
   originalLanguage: string;
   rating: number;
   status: "pending" | "watchedTogether" | "watchedAlone";
@@ -49,7 +51,9 @@ const watchedItem: TestWatchItem = {
   translatedTitle: "Past Lives",
   year: 2023,
   posterUrl: "",
+  summary: "",
   overview: "",
+  genres: [],
   originalLanguage: "en",
   rating: 7.8,
   status: "watchedTogether",

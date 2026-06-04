@@ -244,7 +244,13 @@ export class WatchListService {
           watchEvents: true,
         },
       },
-      order: { id: 'ASC' },
+      order: {
+        id: 'ASC',
+        watchList: {
+          items: { id: 'ASC' },
+          watchEvents: { watchedAt: 'DESC' },
+        },
+      },
     });
   }
 

@@ -79,6 +79,17 @@ describe('WatchListService', () => {
 
     const summary = await service.summary(1);
 
+    expect(repo.find).toHaveBeenCalledWith(
+      expect.objectContaining({
+        order: {
+          id: 'ASC',
+          watchList: {
+            items: { id: 'ASC' },
+            watchEvents: { watchedAt: 'DESC' },
+          },
+        },
+      }),
+    );
     expect(summary).toMatchObject({
       listCount: 1,
       itemCount: 5,

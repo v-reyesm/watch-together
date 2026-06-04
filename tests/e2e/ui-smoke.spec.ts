@@ -18,6 +18,7 @@ const apiItem = {
   posterUrl: "",
   summary: "Two childhood friends reconnect.",
   overview: "Two childhood friends reconnect.",
+  genres: ["Drama", "Romance"],
   originalLanguage: "en",
   rating: 7.8,
   status: "pending",

@@ -19,7 +19,6 @@ WatchTogether runs three containers:
 | `NEXT_PUBLIC_API_URL`          | yes      | Backend URL, no trailing slash (e.g. `https://api.example.com`) |
 | `NEXT_PUBLIC_GOOGLE_CLIENT_ID` | yes      | Google OAuth client ID              |
 | `NODE_ENV`                     | yes      | Set to `production`                 |
-| `DATABASE_URL`                 | yes      | PostgreSQL connection string        |
 
 ### Backend (NestJS)
 
@@ -30,9 +29,8 @@ WatchTogether runs three containers:
 | `DB_USERNAME`    | yes      | Database user                                 |
 | `DB_PASSWORD`    | yes      | Database password                             |
 | `DB_NAME`        | yes      | Database name                                 |
-| `DATABASE_URL`   | yes      | Full connection string                        |
 | `JWT_SECRET`     | yes      | Secret for signing JWT tokens — use a long random string |
-| `CORS_ORIGIN`    | yes      | Frontend origin (e.g. `https://app.example.com`) |
+| `CORS_ORIGIN`    | no       | Frontend origin (e.g. `https://app.example.com`). Defaults to `http://localhost:3000`, so always set it in production |
 | `TMDB_API_KEY`   | yes      | TMDB v3 API key for media search              |
 | `TMDB_BASE_URL`  | yes      | TMDB API base URL (`https://api.themoviedb.org/3`) |
 | `PORT`           | no       | Defaults to `8080`                            |
@@ -140,7 +138,7 @@ Both services expose health checks:
 | Service  | Endpoint          | Expected response |
 | -------- | ----------------- | ----------------- |
 | Frontend | `GET /api/health` | `200 OK`          |
-| Backend  | `GET /health`     | `200 OK`          |
+| Backend  | `GET /api/health` | `200 OK`          |
 
 The PostgreSQL container has a built-in healthcheck via `pg_isready`.
 
@@ -151,7 +149,7 @@ Use the health endpoints with any uptime monitor (UptimeRobot, Uptime Kuma, etc.
 ```bash
 # Quick check from host
 curl -sf http://localhost:3000/api/health && echo "frontend ok"
-curl -sf http://localhost:8080/health && echo "backend ok"
+curl -sf http://localhost:8080/api/health && echo "backend ok"
 ```
 
 Docker's built-in healthcheck (when configured in `docker-compose.yml`) will automatically restart unhealthy containers thanks to `restart: unless-stopped`.
@@ -163,4 +161,8 @@ git pull
 docker compose up -d --build
 ```
 
-TypeORM runs migrations automatically on startup via `synchronize` in development. For production, consider setting `synchronize: false` and managing migrations explicitly with `typeorm migration:run`.
+TypeORM is configured with `synchronize: false`, so schema changes are never applied automatically. After pulling a version that includes new migrations, run them explicitly inside the backend container:
+
+```bash
+docker compose exec backend npx typeorm migration:run -d dist/db/data-source.js
+```

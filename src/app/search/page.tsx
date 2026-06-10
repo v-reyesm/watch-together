@@ -3,7 +3,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import { SearchIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ComingSoonNote, PageIntro, WatchItemRow } from "@/components/watch-ui";
+import { PageIntro, WatchItemRow } from "@/components/watch-ui";
 import { addListItem, getWatchLists, searchMedia } from "@/lib/watch-api";
 import type { ApiSearchResult, ApiWatchList } from "@/lib/watch-api";
 import { itemFromSearchResult } from "@/lib/watch-mappers";
@@ -101,8 +101,6 @@ export default function SearchPage() {
           </label>
         ) : null}
       </form>
-
-      <ComingSoonNote />
 
       {message ? (
         <div role="status" className="rounded-lg border bg-card p-3 text-sm">

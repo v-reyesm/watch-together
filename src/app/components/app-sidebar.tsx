@@ -133,19 +133,6 @@ function SidebarContent() {
 
         <section className="flex flex-col gap-2">
           <p className="px-2 font-mono text-[0.62rem] uppercase tracking-[0.14em] text-sidebar-foreground/45">
-            Invitaciones
-          </p>
-          <div className="rounded-lg border border-dashed border-sidebar-border px-3 py-2 text-xs leading-5 text-sidebar-foreground/70">
-            <b className="font-semibold text-sidebar-foreground">Ana</b> te
-            invito a <i>Plan de domingo</i>
-            <div className="text-[0.68rem] text-sidebar-foreground/45">
-              hace 2 horas
-            </div>
-          </div>
-        </section>
-
-        <section className="flex flex-col gap-2">
-          <p className="px-2 font-mono text-[0.62rem] uppercase tracking-[0.14em] text-sidebar-foreground/45">
             Coming soon
           </p>
           <div className="flex flex-col gap-0.5">

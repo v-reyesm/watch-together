@@ -80,7 +80,9 @@ export class WatchListService {
   async summary(userId: number) {
     const memberships = await this.findMembershipsWithListData(userId);
     const rawLists = memberships.map((membership) => membership.watchList);
-    const lists = rawLists.map((list) => this.serializeList(list, userId, true));
+    const lists = rawLists.map((list) =>
+      this.serializeList(list, userId, true),
+    );
     const itemCount = lists.reduce((sum, list) => sum + list.itemCount, 0);
     const watchedCount = lists.reduce(
       (sum, list) => sum + list.watchedCount,

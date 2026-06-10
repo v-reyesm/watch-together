@@ -2,7 +2,11 @@ export function buildInviteUrl(token: string, origin = window.location.origin) {
   return `${origin}/invites/${token}`;
 }
 
-export function buildInviteMailtoHref(listName: string, inviteUrl: string) {
+export function buildInviteMailtoHref(
+  listName: string,
+  inviteUrl: string,
+  recipientEmail = "",
+) {
   const subject = `Te invito a "${listName}" en WatchTogether`;
   const body = [
     "Hola,",
@@ -13,7 +17,7 @@ export function buildInviteMailtoHref(listName: string, inviteUrl: string) {
     "Nos vemos en la lista.",
   ].join("\n");
 
-  return `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  return `mailto:${encodeURIComponent(recipientEmail)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 }
 
 export async function copyInviteText(value: string) {

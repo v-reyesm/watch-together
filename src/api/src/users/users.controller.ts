@@ -1,9 +1,12 @@
 import {
   Body,
   Controller,
+  DefaultValuePipe,
   Get,
   NotFoundException,
+  ParseIntPipe,
   Patch,
+  Query,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
@@ -12,6 +15,7 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { UsersService } from './users.service';
+import { MediaService } from '../media/media.service';
 import {
   CurrentUser,
   CurrentUserPayload,
@@ -22,7 +26,10 @@ import { UpdateProfileDto } from './dto/update-profile.dto';
 @ApiBearerAuth()
 @Controller('users')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(
+    private readonly usersService: UsersService,
+    private readonly mediaService: MediaService,
+  ) {}
 
   @Get('me')
   @ApiOperation({ summary: 'Get current user profile' })
@@ -61,5 +68,16 @@ export class UsersController {
       avatarUrl: user.avatarUrl,
       createdAt: user.createdAt,
     };
+  }
+
+  @Get('me/watch-history')
+  @ApiOperation({ summary: 'Get watch history for current user' })
+  @ApiResponse({ status: 200, description: 'Paginated watch history' })
+  getWatchHistory(
+    @CurrentUser() currentUser: CurrentUserPayload,
+    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
+    @Query('offset', new DefaultValuePipe(0), ParseIntPipe) offset: number,
+  ) {
+    return this.mediaService.getWatchHistory(currentUser.id, limit, offset);
   }
 }

@@ -9,7 +9,7 @@ export default function ComingSoonPage() {
   return (
     <div className="container flex max-w-6xl flex-col gap-8 py-6 md:py-10">
       <PageIntro
-        eyebrow="Coming soon"
+        eyebrow="Próximamente"
         title="Funciones futuras"
         description="Ideas de interacción que quedan separadas del MVP actual. No conectan con backend ni modifican datos todavía."
         action={

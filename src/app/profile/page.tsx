@@ -17,10 +17,12 @@ export default function ProfilePage() {
   const [saved, setSaved] = useState(false);
   const [history, setHistory] = useState<ApiWatchHistoryItem[]>([]);
   const [historyLoading, setHistoryLoading] = useState(true);
+  const [historyError, setHistoryError] = useState<string | null>(null);
 
   useEffect(() => {
-    getWatchHistory(10).then(({ data }) => {
+    getWatchHistory(10).then(({ data, error }) => {
       setHistory(data?.items ?? []);
+      setHistoryError(error ?? null);
       setHistoryLoading(false);
     });
   }, []);
@@ -127,6 +129,10 @@ export default function ProfilePage() {
           {historyLoading ? (
             <p className="text-sm text-muted-foreground">
               Cargando historial...
+            </p>
+          ) : historyError ? (
+            <p role="alert" className="text-sm text-muted-foreground">
+              No pudimos cargar tu historial. Intenta de nuevo más tarde.
             </p>
           ) : history.length === 0 ? (
             <p className="text-sm text-muted-foreground">

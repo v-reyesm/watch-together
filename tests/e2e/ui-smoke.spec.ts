@@ -185,7 +185,7 @@ test.describe("authenticated UI", () => {
     ).toBeVisible();
     await expect(page.getByText("Pendiente").first()).toBeVisible();
     await expect(
-      page.getByRole("link", { name: /Coming soon|Soon/ }),
+      page.getByRole("link", { name: /Próximamente|Nuevo/ }),
     ).toBeVisible();
     await expect(page.getByText("Decidir rapido")).toHaveCount(0);
     await expect(page.getByText("Futuro ranking")).toHaveCount(0);

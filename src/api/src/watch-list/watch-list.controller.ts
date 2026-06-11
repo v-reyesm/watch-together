@@ -62,6 +62,24 @@ export class WatchListController {
     return this.watchListService.remove(currentUser.id, id);
   }
 
+  // 'me' must be declared before ':memberId' so it is not parsed as an id.
+  @Delete(':id/members/me')
+  leave(
+    @CurrentUser() currentUser: CurrentUserPayload,
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    return this.watchListService.leave(currentUser.id, id);
+  }
+
+  @Delete(':id/members/:memberId')
+  removeMember(
+    @CurrentUser() currentUser: CurrentUserPayload,
+    @Param('id', ParseIntPipe) id: number,
+    @Param('memberId', ParseIntPipe) memberId: number,
+  ) {
+    return this.watchListService.removeMember(currentUser.id, id, memberId);
+  }
+
   @Post(':id/items')
   addItem(
     @CurrentUser() currentUser: CurrentUserPayload,

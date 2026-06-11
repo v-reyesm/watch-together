@@ -2,8 +2,16 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
-import { ArrowLeftIcon, LinkIcon, PlusIcon, SearchIcon } from "lucide-react";
+import { useParams, useRouter } from "next/navigation";
+import {
+  ArrowLeftIcon,
+  LinkIcon,
+  LogOutIcon,
+  PencilIcon,
+  PlusIcon,
+  SearchIcon,
+  Trash2Icon,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { InvitePanel } from "@/components/invite-panel";
 import {
@@ -15,20 +23,31 @@ import {
 } from "@/components/watch-ui";
 import { useAuth } from "@/lib/auth";
 import {
+  deleteWatchList,
   getWatchList,
+  leaveWatchList,
   markListItemWatched,
+  removeListMember,
   undoLatestWatch,
+  updateWatchList,
 } from "@/lib/watch-api";
 import type { ApiWatchList } from "@/lib/watch-api";
 import { itemFromApi } from "@/lib/watch-mappers";
 
 export default function ListDetailPage() {
   const { user } = useAuth();
+  const router = useRouter();
   const params = useParams<{ id: string }>();
   const listId = Number(params.id);
   const [list, setList] = useState<ApiWatchList | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState(false);
+  const [editName, setEditName] = useState("");
+  const [editDescription, setEditDescription] = useState("");
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [confirmingLeave, setConfirmingLeave] = useState(false);
+  const [busy, setBusy] = useState(false);
 
   async function loadList() {
     if (!Number.isFinite(listId) || listId <= 0) {
@@ -51,12 +70,17 @@ export default function ListDetailPage() {
 
   const items = useMemo(() => list?.items.map(itemFromApi) ?? [], [list]);
   const members = list?.members.map((member) => member.initials || "?") ?? [];
-  const canManageInvites =
+  const isOwner =
     list != null &&
     user != null &&
     list.members.some(
       (member) => member.id === user.id && member.role === "owner",
     );
+  const isMember =
+    list != null &&
+    user != null &&
+    list.members.some((member) => member.id === user.id);
+  const canManageInvites = isOwner;
 
   async function handleToggleWatched(item: WatchItem) {
     if (!list || !item.numericId) return;
@@ -69,6 +93,73 @@ export default function ListDetailPage() {
     if (data) {
       setList(data);
     }
+  }
+
+  function startEditing() {
+    if (!list) return;
+    setEditName(list.name);
+    setEditDescription(list.description);
+    setEditing(true);
+  }
+
+  async function handleSaveEdit() {
+    if (!list) return;
+    const name = editName.trim();
+    if (!name) {
+      setError("El nombre de la lista no puede estar vacío.");
+      return;
+    }
+    setBusy(true);
+    const { data, error: apiError } = await updateWatchList(list.id, {
+      name,
+      description: editDescription.trim(),
+    });
+    setBusy(false);
+    setError(apiError ?? null);
+    if (data) {
+      setList(data);
+      setEditing(false);
+    }
+  }
+
+  async function handleDeleteList() {
+    if (!list) return;
+    setBusy(true);
+    const { error: apiError } = await deleteWatchList(list.id);
+    setBusy(false);
+    if (apiError) {
+      setError(apiError);
+      setConfirmingDelete(false);
+      return;
+    }
+    router.push("/lists");
+  }
+
+  async function handleRemoveMember(memberId: number) {
+    if (!list) return;
+    setBusy(true);
+    const { data, error: apiError } = await removeListMember(
+      list.id,
+      memberId,
+    );
+    setBusy(false);
+    setError(apiError ?? null);
+    if (data) {
+      setList(data);
+    }
+  }
+
+  async function handleLeaveList() {
+    if (!list) return;
+    setBusy(true);
+    const { error: apiError } = await leaveWatchList(list.id);
+    setBusy(false);
+    if (apiError) {
+      setError(apiError);
+      setConfirmingLeave(false);
+      return;
+    }
+    router.push("/lists");
   }
 
   if (loading) {
@@ -110,9 +201,40 @@ export default function ListDetailPage() {
                 Listas
               </Link>
             </Button>
-            <h1 className="truncate text-2xl font-semibold tracking-tight md:text-[1.65rem]">
-              {list.name}
-            </h1>
+            {editing ? (
+              <div className="flex max-w-md flex-col gap-2">
+                <input
+                  value={editName}
+                  onChange={(event) => setEditName(event.target.value)}
+                  aria-label="Nombre de la lista"
+                  className="h-10 rounded-md border bg-background px-3 text-lg font-semibold outline-none"
+                />
+                <textarea
+                  value={editDescription}
+                  onChange={(event) => setEditDescription(event.target.value)}
+                  aria-label="Descripción de la lista"
+                  rows={2}
+                  className="rounded-md border bg-background px-3 py-2 text-sm outline-none"
+                />
+                <div className="flex gap-2">
+                  <Button size="sm" onClick={handleSaveEdit} disabled={busy}>
+                    Guardar
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setEditing(false)}
+                    disabled={busy}
+                  >
+                    Cancelar
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <h1 className="truncate text-2xl font-semibold tracking-tight md:text-[1.65rem]">
+                {list.name}
+              </h1>
+            )}
             <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
               <span className="inline-flex items-center gap-2">
                 <MemberStack members={members.length ? members : ["?"]} />
@@ -126,6 +248,88 @@ export default function ListDetailPage() {
           </div>
 
           <div className="flex flex-wrap gap-2">
+            {isOwner ? (
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="rounded-full"
+                  onClick={startEditing}
+                  disabled={editing || busy}
+                >
+                  <PencilIcon className="size-4" />
+                  Editar
+                </Button>
+                {confirmingDelete ? (
+                  <>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      className="rounded-full"
+                      onClick={handleDeleteList}
+                      disabled={busy}
+                    >
+                      Confirmar eliminación
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="rounded-full"
+                      onClick={() => setConfirmingDelete(false)}
+                      disabled={busy}
+                    >
+                      Cancelar
+                    </Button>
+                  </>
+                ) : (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="rounded-full"
+                    onClick={() => setConfirmingDelete(true)}
+                    disabled={busy}
+                  >
+                    <Trash2Icon className="size-4" />
+                    Eliminar lista
+                  </Button>
+                )}
+              </>
+            ) : null}
+            {isMember && !isOwner ? (
+              confirmingLeave ? (
+                <>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    className="rounded-full"
+                    onClick={handleLeaveList}
+                    disabled={busy}
+                  >
+                    Confirmar salida
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="rounded-full"
+                    onClick={() => setConfirmingLeave(false)}
+                    disabled={busy}
+                  >
+                    Cancelar
+                  </Button>
+                </>
+              ) : (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="rounded-full"
+                  onClick={() => setConfirmingLeave(true)}
+                  disabled={busy}
+                >
+                  <LogOutIcon className="size-4" />
+                  Salir de la lista
+                </Button>
+              )
+            ) : null}
             {canManageInvites ? (
               <Button
                 variant="outline"
@@ -161,6 +365,41 @@ export default function ListDetailPage() {
             {list.description}
           </p>
         ) : null}
+
+        <section
+          aria-label="Miembros de la lista"
+          className="max-w-3xl rounded-lg border bg-card p-4"
+        >
+          <h2 className="text-sm font-semibold">Miembros</h2>
+          <ul className="mt-3 flex flex-col gap-2">
+            {list.members.map((member) => (
+              <li
+                key={member.id}
+                className="flex items-center justify-between gap-3 text-sm"
+              >
+                <span className="flex min-w-0 items-center gap-2">
+                  <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold">
+                    {member.initials || "?"}
+                  </span>
+                  <span className="truncate">{member.name}</span>
+                  <span className="shrink-0 rounded-full border px-2 py-0.5 text-[0.65rem] uppercase tracking-wide text-muted-foreground">
+                    {member.role === "owner" ? "Owner" : "Miembro"}
+                  </span>
+                </span>
+                {isOwner && member.role !== "owner" ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleRemoveMember(member.id)}
+                    disabled={busy}
+                  >
+                    Quitar
+                  </Button>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+        </section>
 
         <section className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
           <div className="flex min-h-11 w-full max-w-xl items-center gap-3 rounded-md border bg-background px-3">

@@ -263,6 +263,8 @@ describe('Watch lists (e2e)', () => {
   let inviteRepo: Repository<TestInvite>;
   let token: string;
   let otherToken: string;
+  let ownerId: number;
+  let otherUserId: number;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -374,6 +376,7 @@ describe('Watch lists (e2e)', () => {
       }),
     );
     token = jwtService.sign({ sub: user.id, email: user.email });
+    ownerId = user.id;
 
     const otherUser = await userRepo.save(
       userRepo.create({
@@ -388,6 +391,7 @@ describe('Watch lists (e2e)', () => {
       sub: otherUser.id,
       email: otherUser.email,
     });
+    otherUserId = otherUser.id;
 
     await app.init();
   }, 30_000);
@@ -627,6 +631,82 @@ describe('Watch lists (e2e)', () => {
       status: 'pending',
       watchedAt: null,
     });
+  });
+
+  it('lets the owner remove a member and a member leave the list', async () => {
+    const listRes = await request(app.getHttpServer())
+      .post('/api/watch-lists')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ name: 'Lista con miembros', description: 'Para gestionar' })
+      .expect(201);
+    const listBody = listRes.body as unknown as ListResponseBody;
+
+    const inviteRes = await request(app.getHttpServer())
+      .post(`/api/watch-lists/${listBody.id}/invites`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(201);
+    const inviteBody = inviteRes.body as unknown as InviteResponseBody;
+
+    await request(app.getHttpServer())
+      .post(`/api/invites/${inviteBody.token}/join`)
+      .set('Authorization', `Bearer ${otherToken}`)
+      .expect(201);
+
+    // A member cannot remove other members (owner-only).
+    await request(app.getHttpServer())
+      .delete(`/api/watch-lists/${listBody.id}/members/${ownerId}`)
+      .set('Authorization', `Bearer ${otherToken}`)
+      .expect(403);
+
+    // The owner cannot remove themselves.
+    await request(app.getHttpServer())
+      .delete(`/api/watch-lists/${listBody.id}/members/${ownerId}`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(409);
+
+    // The owner cannot leave their own list.
+    await request(app.getHttpServer())
+      .delete(`/api/watch-lists/${listBody.id}/members/me`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(403);
+
+    // The owner removes the member.
+    const removeRes = await request(app.getHttpServer())
+      .delete(`/api/watch-lists/${listBody.id}/members/${otherUserId}`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+    expect(
+      (removeRes.body as unknown as WatchListResponseBody).members,
+    ).toHaveLength(1);
+
+    // The removed user no longer has access.
+    await request(app.getHttpServer())
+      .get(`/api/watch-lists/${listBody.id}`)
+      .set('Authorization', `Bearer ${otherToken}`)
+      .expect(403);
+
+    // Re-join and leave voluntarily.
+    const secondInviteRes = await request(app.getHttpServer())
+      .post(`/api/watch-lists/${listBody.id}/invites`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(201);
+    const secondInviteBody =
+      secondInviteRes.body as unknown as InviteResponseBody;
+
+    await request(app.getHttpServer())
+      .post(`/api/invites/${secondInviteBody.token}/join`)
+      .set('Authorization', `Bearer ${otherToken}`)
+      .expect(201);
+
+    await request(app.getHttpServer())
+      .delete(`/api/watch-lists/${listBody.id}/members/me`)
+      .set('Authorization', `Bearer ${otherToken}`)
+      .expect(200);
+
+    await request(app.getHttpServer())
+      .get(`/api/watch-lists/${listBody.id}`)
+      .set('Authorization', `Bearer ${otherToken}`)
+      .expect(403);
   });
 
   it('creates an invite and lets another user join the list', async () => {

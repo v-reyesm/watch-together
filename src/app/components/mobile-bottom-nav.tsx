@@ -15,7 +15,7 @@ const navItems = [
   { href: "/", label: "Inicio", icon: HomeIcon },
   { href: "/search", label: "Buscar", icon: SearchIcon },
   { href: "/lists", label: "Listas", icon: ListIcon },
-  { href: "/coming-soon", label: "Soon", icon: SparklesIcon },
+  { href: "/coming-soon", label: "Nuevo", icon: SparklesIcon },
   { href: "/profile", label: "Perfil", icon: UserIcon },
 ] as const;
 
@@ -26,7 +26,7 @@ export function MobileBottomNav() {
     <nav
       className="fixed bottom-0 left-0 right-0 z-50 flex items-center justify-around border-t border-border bg-background/95 px-2 py-2 backdrop-blur supports-[backdrop-filter]:bg-background/85 md:hidden [padding-bottom:max(0.5rem,env(safe-area-inset-bottom))]"
       role="navigation"
-      aria-label="Main navigation"
+      aria-label="Navegación principal"
     >
       {navItems.map(({ href, label, icon: Icon }) => {
         const isActive =

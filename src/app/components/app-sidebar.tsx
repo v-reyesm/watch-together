@@ -24,7 +24,7 @@ const navItems = [
 ] as const;
 
 const comingSoonItems = [
-  { href: "/coming-soon", label: "Coming soon", icon: SparklesIcon },
+  { href: "/coming-soon", label: "Próximamente", icon: SparklesIcon },
 ] as const;
 
 function NavLinks() {
@@ -146,7 +146,7 @@ function SidebarContent() {
 
         <section className="flex flex-col gap-2">
           <p className="px-2 font-mono text-[0.62rem] uppercase tracking-[0.14em] text-sidebar-foreground/45">
-            Coming soon
+            Próximamente
           </p>
           <div className="flex flex-col gap-0.5">
             {comingSoonItems.map(({ href, label, icon: Icon }) => {

@@ -10,7 +10,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "WatchTogether",
   description:
-    "A clean, minimal watchlist app for sharing movie & series lists with your partner or friends",
+    "App para listas compartidas de películas y series con tu pareja o amigos",
 };
 
 export default function RootLayout({

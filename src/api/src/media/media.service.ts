@@ -227,34 +227,76 @@ export class MediaService {
     };
   }
 
-  async markWatchedAlone(userId: number, mediaId: number) {
-    const media = await this.mediaRepo.findOneBy({ id: mediaId });
+  // Search results expose the TMDB id (entityToSearchResult), so public
+  // watch-event endpoints resolve by tmdbId first and fall back to the
+  // internal id. TMDB movie and TV ids live in separate namespaces, so an
+  // optional mediaType disambiguates collisions.
+  private async resolveMedia(
+    publicId: number,
+    mediaType?: MediaSearchType,
+  ): Promise<Media | null> {
+    const byTmdbId = await this.mediaRepo.findOneBy(
+      mediaType ? { tmdbId: publicId, mediaType } : { tmdbId: publicId },
+    );
+    if (byTmdbId) return byTmdbId;
+    return this.mediaRepo.findOneBy({ id: publicId });
+  }
+
+  async markWatchedAlone(
+    userId: number,
+    mediaId: number,
+    mediaType?: MediaSearchType,
+  ) {
+    const media = await this.resolveMedia(mediaId, mediaType);
     if (!media) {
       throw new NotFoundException('Título no encontrado');
+    }
+
+    const existing = await this.watchEventRepo.findOne({
+      where: { userId, mediaId: media.id, watchListId: IsNull() },
+      order: { watchedAt: 'DESC' },
+    });
+    if (existing) {
+      return {
+        ok: true,
+        watchEvent: {
+          id: existing.id,
+          mediaId: media.id,
+          watchedAt: existing.watchedAt,
+        },
+      };
     }
 
     const event = await this.watchEventRepo.save(
       this.watchEventRepo.create({
         userId,
-        mediaId,
+        mediaId: media.id,
         watchListId: null,
       }),
     );
 
     return {
       ok: true,
-      watchEvent: { id: event.id, mediaId, watchedAt: event.watchedAt },
+      watchEvent: {
+        id: event.id,
+        mediaId: media.id,
+        watchedAt: event.watchedAt,
+      },
     };
   }
 
-  async undoWatchAlone(userId: number, mediaId: number) {
-    const media = await this.mediaRepo.findOneBy({ id: mediaId });
+  async undoWatchAlone(
+    userId: number,
+    mediaId: number,
+    mediaType?: MediaSearchType,
+  ) {
+    const media = await this.resolveMedia(mediaId, mediaType);
     if (!media) {
       throw new NotFoundException('Título no encontrado');
     }
 
     const latest = await this.watchEventRepo.findOne({
-      where: { userId, mediaId, watchListId: IsNull() },
+      where: { userId, mediaId: media.id, watchListId: IsNull() },
       order: { watchedAt: 'DESC' },
     });
 
@@ -267,18 +309,20 @@ export class MediaService {
   }
 
   async getWatchHistory(userId: number, limit = 20, offset = 0) {
+    const safeLimit = Math.min(Math.max(limit, 1), 100);
+    const safeOffset = Math.max(offset, 0);
     const [events, total] = await this.watchEventRepo.findAndCount({
       where: { userId },
       relations: ['media', 'watchList'],
       order: { watchedAt: 'DESC' },
-      take: limit,
-      skip: offset,
+      take: safeLimit,
+      skip: safeOffset,
     });
 
     return {
       total,
-      limit,
-      offset,
+      limit: safeLimit,
+      offset: safeOffset,
       items: events.map((e) => ({
         id: e.id,
         mediaId: e.mediaId,

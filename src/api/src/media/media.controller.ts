@@ -39,15 +39,29 @@ export class MediaController {
   markWatchedAlone(
     @CurrentUser() currentUser: CurrentUserPayload,
     @Param('id', ParseIntPipe) id: number,
+    @Query('type') type?: string,
   ) {
-    return this.mediaService.markWatchedAlone(currentUser.id, id);
+    return this.mediaService.markWatchedAlone(
+      currentUser.id,
+      id,
+      this.parseMediaType(type),
+    );
   }
 
   @Delete(':id/watch-events/latest')
   undoWatchAlone(
     @CurrentUser() currentUser: CurrentUserPayload,
     @Param('id', ParseIntPipe) id: number,
+    @Query('type') type?: string,
   ) {
-    return this.mediaService.undoWatchAlone(currentUser.id, id);
+    return this.mediaService.undoWatchAlone(
+      currentUser.id,
+      id,
+      this.parseMediaType(type),
+    );
+  }
+
+  private parseMediaType(type?: string): MediaSearchType | undefined {
+    return type === 'tv' || type === 'movie' ? type : undefined;
   }
 }

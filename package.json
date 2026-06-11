@@ -2,6 +2,7 @@
   "name": "watch-together",
   "version": "0.1.0",
   "private": true,
+  "license": "MIT",
   "packageManager": "pnpm@8.6.0",
   "scripts": {
     "dev:web": "next dev",

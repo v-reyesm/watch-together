@@ -134,3 +134,11 @@ Notes:
 
 - Postgres data is persisted in the `postgres_data` volume.
 - `DATABASE_URL` is wired to the `postgres` service for both frontend and backend containers.
+
+## Attribution
+
+This product uses the TMDB API but is not endorsed or certified by TMDB. Each deployment needs its own [TMDB API key](https://www.themoviedb.org/documentation/api).
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).

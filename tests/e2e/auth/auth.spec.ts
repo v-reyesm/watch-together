@@ -61,6 +61,42 @@ async function mockAuthenticatedSession(
 }
 
 test.describe("auth", () => {
+  test("allows register and signs the new user into the app", async ({
+    page,
+  }) => {
+    await page.route("**/api/auth/register", async (route) => {
+      expect(route.request().postDataJSON()).toEqual({
+        name: "Ana",
+        email: authUser.email,
+        password: "password123",
+      });
+
+      await route.fulfill({
+        status: 201,
+        contentType: "application/json",
+        body: JSON.stringify({ accessToken: "register-token" }),
+      });
+    });
+    await mockAuthenticatedSession(page);
+
+    await page.goto("/register");
+    await expect(page.getByText("Crear cuenta").first()).toBeVisible();
+    await page.getByLabel("Nombre").fill("Ana");
+    await page.getByLabel("Email").fill(authUser.email);
+    await page.getByLabel("Contraseña").fill("password123");
+    await page.getByRole("button", { name: "Crear cuenta" }).click();
+
+    await expect(page).toHaveURL("/");
+    await expect(
+      page.getByRole("heading", { name: "Mis listas" }),
+    ).toBeVisible();
+    await expect
+      .poll(async () =>
+        page.evaluate(() => window.sessionStorage.getItem("wt_token")),
+      )
+      .toBe("register-token");
+  });
+
   test("redirects a guest from a protected page to sign-in", async ({
     page,
   }) => {

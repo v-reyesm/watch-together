@@ -30,6 +30,8 @@ WatchTogether runs three containers:
 | `DB_PASSWORD`    | yes      | Database password                             |
 | `DB_NAME`        | yes      | Database name                                 |
 | `JWT_SECRET`     | yes      | Secret for signing JWT tokens — use a long random string |
+| `JWT_EXPIRES_IN` | no       | JWT lifetime, defaults to `24h`               |
+| `GOOGLE_CLIENT_ID` | yes    | Google OAuth client ID, used to verify ID tokens server-side. Must match the frontend's `NEXT_PUBLIC_GOOGLE_CLIENT_ID` |
 | `CORS_ORIGIN`    | no       | Frontend origin (e.g. `https://app.example.com`). Defaults to `http://localhost:3000`, so always set it in production |
 | `TMDB_API_KEY`   | yes      | TMDB v3 API key for media search              |
 | `TMDB_BASE_URL`  | yes      | TMDB API base URL (`https://api.themoviedb.org/3`) |
@@ -48,7 +50,7 @@ WatchTogether runs three containers:
 The included `docker-compose.yml` works for production with two changes:
 
 1. **Replace default credentials** — the compose file ships with `watchtogether`/`watchtogether` for convenience. Override via a `.env` file or environment variables.
-2. **Create `src/api/.env`** — the backend reads its env file for `JWT_SECRET`, `TMDB_API_KEY`, and `CORS_ORIGIN`.
+2. **Create `src/api/.env`** — the backend reads its env file for `JWT_SECRET`, `GOOGLE_CLIENT_ID`, `TMDB_API_KEY`, and `CORS_ORIGIN`.
 
 ```bash
 # Build and start all services
@@ -64,6 +66,8 @@ docker compose logs -f backend
 The PostgreSQL data is persisted in the `postgres_data` named volume.
 
 ## Reverse proxy with Caddy
+
+HTTPS is a hard requirement in production, not a nice-to-have: Google OAuth only accepts plain-HTTP origins/redirects on `localhost`, and PWA installability plus service workers require a secure context. Everything below assumes the app is served over HTTPS.
 
 Caddy provides automatic HTTPS via Let's Encrypt. Install Caddy on the host and create a `Caddyfile`:
 

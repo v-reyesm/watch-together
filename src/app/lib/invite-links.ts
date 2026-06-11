@@ -17,8 +17,13 @@ export function buildInviteMailtoHref(
     "Nos vemos en la lista.",
   ].join("\n");
 
-  // The address goes unencoded: encoding "@" as %40 breaks some mail clients.
-  return `mailto:${recipientEmail.trim()}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  // Encode the address so "?"/"&" or spaces cannot inject extra mailto
+  // fields, but keep "@" readable: encoding it as %40 breaks some clients.
+  const recipient = encodeURIComponent(recipientEmail.trim()).replace(
+    /%40/g,
+    "@",
+  );
+  return `mailto:${recipient}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 }
 
 export async function copyInviteText(value: string) {

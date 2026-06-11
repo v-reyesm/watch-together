@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import type { ApiWatchList } from "@/lib/watch-api";
 
 async function mockAuthenticatedUser(page: Page) {
   await page.route("**/api/users/me", async (route) => {
@@ -68,7 +69,7 @@ test.describe("list detail route", () => {
   }) => {
     await mockAuthenticatedUser(page);
 
-    let currentList = {
+    let currentList: ApiWatchList = {
       id: 7,
       name: "Noches de viernes",
       description: "Películas para dos",

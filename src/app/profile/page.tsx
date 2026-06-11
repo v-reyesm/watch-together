@@ -1,18 +1,31 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ChevronRightIcon, SettingsIcon } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth";
 import { apiFetch } from "@/lib/api";
+import { getWatchHistory } from "@/lib/watch-api";
+import type { ApiWatchHistoryItem } from "@/lib/watch-api";
 
 export default function ProfilePage() {
   const { user, signOut } = useAuth();
   const [displayName, setDisplayName] = useState(user?.name ?? "");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [history, setHistory] = useState<ApiWatchHistoryItem[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(true);
+  const [historyError, setHistoryError] = useState<string | null>(null);
+
+  useEffect(() => {
+    getWatchHistory(10).then(({ data, error }) => {
+      setHistory(data?.items ?? []);
+      setHistoryError(error ?? null);
+      setHistoryLoading(false);
+    });
+  }, []);
 
   async function handleSave() {
     setSaving(true);
@@ -102,6 +115,65 @@ export default function ProfilePage() {
               Cerrar sesión →
             </Button>
           </div>
+        </CardContent>
+      </Card>
+
+      <Card className="max-w-xl">
+        <CardHeader>
+          <CardTitle>Historial</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Tus últimas vistas
+          </p>
+        </CardHeader>
+        <CardContent>
+          {historyLoading ? (
+            <p className="text-sm text-muted-foreground">
+              Cargando historial...
+            </p>
+          ) : historyError ? (
+            <p role="alert" className="text-sm text-muted-foreground">
+              No pudimos cargar tu historial. Intenta de nuevo más tarde.
+            </p>
+          ) : history.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              Aún no has marcado nada como visto.
+            </p>
+          ) : (
+            <div className="flex flex-col gap-3">
+              {history.map((event) => (
+                <div
+                  key={event.id}
+                  className="flex items-center gap-3 rounded-lg border bg-background p-3"
+                >
+                  {event.posterUrl ? (
+                    <img
+                      src={event.posterUrl}
+                      alt={event.translatedTitle || event.title}
+                      className="h-14 w-10 shrink-0 rounded object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-14 w-10 shrink-0 items-center justify-center rounded bg-muted text-xs text-muted-foreground">
+                      ?
+                    </div>
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium">
+                      {event.translatedTitle || event.title}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {event.context.type === "list"
+                        ? `En lista: ${event.context.listName}`
+                        : "Vista individual"}
+                      {" · "}
+                      {new Intl.DateTimeFormat("es-CL", {
+                        dateStyle: "medium",
+                      }).format(new Date(event.watchedAt))}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

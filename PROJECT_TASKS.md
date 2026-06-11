@@ -26,26 +26,25 @@
 - UI shows watched status (alone vs together) and list context.
 - Runs via Docker Compose with documented env vars and a clean setup.
 
-## Progress Snapshot (2026-06-10)
+## Progress Snapshot (2026-06-11)
 - Done: `WT-020` Create list (PR #7)
 - Done: `WT-022` List detail page (PR #8)
 - Done: `WT-030` Create invite link (PR #10)
 - Done: `WT-031` Join via invite link (PR #10)
+- Done: `WT-032` Invite by email (PR #22)
 - Done: `WT-043` Remove item from list (PR #9)
+- Done: `WT-050` Watch events model + endpoints (PR #21)
 - Done: `WT-053` Undo / unwatch (PR #9)
+- Done: `WT-060` Spanish-first UI copy pass (PR #20)
 - Done: `WT-080` API auth guard + list authorization (PR #11)
+- Done: `WT-086` Health endpoints + docker healthchecks (PR #19)
 - Done: `WT-100` Tests for core flow (PR #11)
+- Done: `WT-111` Deployment notes (PR #24)
 - Done: `WT-120` Home dashboard data endpoint for UI proposal (PR #14)
 - Done: `WT-121` List detail aggregate endpoint (PR #16)
 - Done: `WT-123` Watch-state endpoints for list items (PR #15)
-- Done: `WT-124` Invite endpoints for dashboard and list header UI (PR #17)
-- In review: `WT-032` Invite by email (PR #22)
-- In review: `WT-050` Watch events model + endpoints (PR #21)
-- In review: `WT-060` Spanish-first UI copy pass (PR #20)
-- In review: `WT-086` Health endpoints + docker healthchecks (PR #19)
-- In review: `WT-111` Deployment notes (PR #24)
-- In review: `WT-124` follow-up invite UI work (PR #18)
-- In review: `WT-125` Frontend data integration for proposal UI (PR #23)
+- Done: `WT-124` Invite endpoints + UI for dashboard and list header (PRs #17, #18)
+- Done: `WT-125` Frontend data integration for proposal UI (PR #23)
 
 ## Tickets (Grouped by Epic)
 
@@ -185,7 +184,7 @@
 
 ### WT-032 (MVP, P1, M): Invite by email (define behavior + implement)
 - Description: Implement "invite by email" as either real email delivery or a `mailto:` flow.
-- Status: In review (PR #22).
+- Status: Done in PR #22 (mailto flow).
 - Acceptance criteria:
   - Chosen behavior documented.
   - Owner can copy/share a ready-made invite message.
@@ -245,7 +244,7 @@
 
 ### WT-050 (MVP, P0, L): Watch events model + endpoints
 - Description: Implement watched tracking with context and timestamps.
-- Status: In review (PR #21).
+- Status: Done in PR #21.
 - Acceptance criteria:
   - Mark watched inside shared list => "together" event linked to list.
   - Defines how events map to current watched state (history vs last-event-wins).
@@ -324,7 +323,7 @@
 
 ### WT-124 (MVP, P1, M): Invite endpoints for dashboard and list header UI
 - Description: Implement the endpoints needed by the Home invite banner and List header invite action.
-- Status: Done in PR #17; follow-up UI work in review (PR #18).
+- Status: Done in PRs #17 (endpoints) and #18 (UI).
 - Proposed endpoint(s):
   - `POST /watch-lists/:id/invites`
   - `GET /watch-lists/:id/invites`
@@ -338,7 +337,7 @@
 
 ### WT-125 (MVP, P1, M): Frontend data integration for proposal UI
 - Description: Replace visual sample data on Home, Lists, Search, Profile, and Config where backend data exists.
-- Status: In review (PR #23).
+- Status: Done in PR #23.
 - Acceptance criteria:
   - Shared typed API client methods exist for lists, items, invites, watch events, search, and profile.
   - Core proposal screens show loading, empty, unauthorized, forbidden, and retry/error states.
@@ -361,7 +360,7 @@
 
 ### WT-060 (MVP, P0, M): Spanish-first UI copy pass
 - Description: Replace visible UI strings with Spanish across the MVP flow.
-- Status: In review (PR #20).
+- Status: Done in PR #20.
 - Acceptance criteria:
   - No broken layouts.
   - Error states also translated.
@@ -426,7 +425,7 @@
 
 ### WT-086 (MVP, P1, S): Health endpoints + docker healthchecks
 - Description: Ensure frontend and backend expose health endpoints used by Docker Compose.
-- Status: In review (PR #19).
+- Status: Done in PR #19.
 - Acceptance criteria:
   - `/health` (or equivalent) returns 200 when ready.
   - Docker Compose uses healthchecks for dependency ordering.
@@ -473,7 +472,7 @@
 
 ### WT-111 (MVP, P1, M): Deployment notes (single Docker host)
 - Description: Document a simple deployment including TLS/reverse proxy and domain setup.
-- Status: In review (PR #24).
+- Status: Done in PR #24.
 - Acceptance criteria:
   - Mentions HTTPS requirement for OAuth + PWA.
   - Includes DB backup approach and where backups live.

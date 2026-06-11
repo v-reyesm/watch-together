@@ -22,6 +22,7 @@ import { AuthService } from '../src/auth/auth.service';
 import { JwtPayload, JwtStrategy } from '../src/auth/strategies/jwt.strategy';
 import { UsersService } from '../src/users/users.service';
 import { UsersController } from '../src/users/users.controller';
+import { MediaService } from '../src/media/media.service';
 import { GlobalJwtAuthGuard } from '../src/auth/guards/global-jwt-auth.guard';
 import { GlobalExceptionFilter } from '../src/common/filters/http-exception.filter';
 import { User } from '../src/users/entities/user.entity';
@@ -109,6 +110,14 @@ describe('Auth (e2e)', () => {
           inject: [DataSource],
         },
         UsersService,
+        {
+          provide: MediaService,
+          useValue: {
+            getWatchHistory: jest
+              .fn()
+              .mockResolvedValue({ total: 0, limit: 20, offset: 0, items: [] }),
+          },
+        },
         {
           provide: APP_GUARD,
           useClass: GlobalJwtAuthGuard,

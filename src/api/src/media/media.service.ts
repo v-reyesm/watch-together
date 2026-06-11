@@ -1,6 +1,6 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, Repository } from 'typeorm';
+import { In, IsNull, Repository } from 'typeorm';
 import { Movie } from '../movies/entities/movie.entity';
 import { TvSerie } from '../tv-series/entities/tv-serie.entity';
 import { TmdbSearchCache } from './entities/tmdb-search-cache.entity';
@@ -10,6 +10,7 @@ import {
   MediaSearchType,
 } from '../providers/interfaces/media-provider.interface';
 import { Media } from './entities/media.entity';
+import { WatchEvent } from '../watch-list/entities/watch-event.entity';
 
 @Injectable()
 export class MediaService {
@@ -23,6 +24,8 @@ export class MediaService {
     private readonly cacheRepo: Repository<TmdbSearchCache>,
     @InjectRepository(Media)
     private readonly mediaRepo: Repository<Media>,
+    @InjectRepository(WatchEvent)
+    private readonly watchEventRepo: Repository<WatchEvent>,
     private readonly tmdbService: TmdbService,
   ) {
     this.cacheTtlDays = parseInt(process.env.SEARCH_CACHE_TTL_DAYS ?? '30', 10);
@@ -221,6 +224,121 @@ export class MediaService {
       originalLanguage: entity.originalLanguage ?? '',
       rating: entity.rating ?? 0,
       mediaType: searchType,
+    };
+  }
+
+  // Search results expose the TMDB id (entityToSearchResult), so public
+  // watch-event endpoints resolve by tmdbId first and fall back to the
+  // internal id. TMDB movie and TV ids live in separate namespaces, so an
+  // optional mediaType disambiguates collisions.
+  private async resolveMedia(
+    publicId: number,
+    mediaType?: MediaSearchType,
+  ): Promise<Media | null> {
+    const byTmdbId = await this.mediaRepo.findOneBy(
+      mediaType ? { tmdbId: publicId, mediaType } : { tmdbId: publicId },
+    );
+    if (byTmdbId) return byTmdbId;
+    return this.mediaRepo.findOneBy({ id: publicId });
+  }
+
+  async markWatchedAlone(
+    userId: number,
+    mediaId: number,
+    mediaType?: MediaSearchType,
+  ) {
+    const media = await this.resolveMedia(mediaId, mediaType);
+    if (!media) {
+      throw new NotFoundException('Título no encontrado');
+    }
+
+    const existing = await this.watchEventRepo.findOne({
+      where: { userId, mediaId: media.id, watchListId: IsNull() },
+      order: { watchedAt: 'DESC' },
+    });
+    if (existing) {
+      return {
+        ok: true,
+        watchEvent: {
+          id: existing.id,
+          mediaId: media.id,
+          watchedAt: existing.watchedAt,
+        },
+      };
+    }
+
+    const event = await this.watchEventRepo.save(
+      this.watchEventRepo.create({
+        userId,
+        mediaId: media.id,
+        watchListId: null,
+      }),
+    );
+
+    return {
+      ok: true,
+      watchEvent: {
+        id: event.id,
+        mediaId: media.id,
+        watchedAt: event.watchedAt,
+      },
+    };
+  }
+
+  async undoWatchAlone(
+    userId: number,
+    mediaId: number,
+    mediaType?: MediaSearchType,
+  ) {
+    const media = await this.resolveMedia(mediaId, mediaType);
+    if (!media) {
+      throw new NotFoundException('Título no encontrado');
+    }
+
+    const latest = await this.watchEventRepo.findOne({
+      where: { userId, mediaId: media.id, watchListId: IsNull() },
+      order: { watchedAt: 'DESC' },
+    });
+
+    if (!latest) {
+      throw new NotFoundException('No hay vista reciente para deshacer');
+    }
+
+    await this.watchEventRepo.remove(latest);
+    return { ok: true };
+  }
+
+  async getWatchHistory(userId: number, limit = 20, offset = 0) {
+    const safeLimit = Math.min(Math.max(limit, 1), 100);
+    const safeOffset = Math.max(offset, 0);
+    const [events, total] = await this.watchEventRepo.findAndCount({
+      where: { userId },
+      relations: ['media', 'watchList'],
+      order: { watchedAt: 'DESC' },
+      take: safeLimit,
+      skip: safeOffset,
+    });
+
+    return {
+      total,
+      limit: safeLimit,
+      offset: safeOffset,
+      items: events.map((e) => ({
+        id: e.id,
+        mediaId: e.mediaId,
+        title: e.media?.title ?? '',
+        translatedTitle: e.media?.translatedTitle ?? '',
+        posterUrl: e.media?.posterUrl ?? '',
+        mediaType: e.media?.mediaType ?? 'movie',
+        watchedAt: e.watchedAt,
+        context: e.watchListId
+          ? {
+              type: 'list' as const,
+              listId: e.watchListId,
+              listName: e.watchList?.name ?? '',
+            }
+          : { type: 'alone' as const },
+      })),
     };
   }
 }

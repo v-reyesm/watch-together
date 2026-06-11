@@ -175,3 +175,49 @@ export function searchMedia(
   const params = new URLSearchParams({ query, type });
   return apiFetch<ApiSearchResult[]>(`/api/media/search?${params.toString()}`);
 }
+
+export function markMediaWatched(mediaId: number) {
+  return apiFetch<{ ok: boolean; watchEvent: { id: number; mediaId: number; watchedAt: string } }>(
+    `/api/media/${mediaId}/watch-events`,
+    { method: "POST" },
+  );
+}
+
+export function undoMediaWatch(mediaId: number) {
+  return apiFetch<{ ok: boolean }>(
+    `/api/media/${mediaId}/watch-events/latest`,
+    { method: "DELETE" },
+  );
+}
+
+export type ApiWatchHistoryContext =
+  | { type: "alone" }
+  | { type: "list"; listId: number; listName: string };
+
+export type ApiWatchHistoryItem = {
+  id: number;
+  mediaId: number;
+  title: string;
+  translatedTitle: string;
+  posterUrl: string;
+  mediaType: ApiMediaType;
+  watchedAt: string;
+  context: ApiWatchHistoryContext;
+};
+
+export type ApiWatchHistoryResponse = {
+  total: number;
+  limit: number;
+  offset: number;
+  items: ApiWatchHistoryItem[];
+};
+
+export function getWatchHistory(limit = 20, offset = 0) {
+  const params = new URLSearchParams({
+    limit: String(limit),
+    offset: String(offset),
+  });
+  return apiFetch<ApiWatchHistoryResponse>(
+    `/api/users/me/watch-history?${params.toString()}`,
+  );
+}

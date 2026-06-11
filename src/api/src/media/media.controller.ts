@@ -1,4 +1,15 @@
-import { BadRequestException, Controller, Get, Query } from '@nestjs/common';
+import {
+  BadRequestException,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  ParseIntPipe,
+  Post,
+  Query,
+} from '@nestjs/common';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import type { CurrentUserPayload } from '../auth/decorators/current-user.decorator';
 import { MediaService } from './media.service';
 import { MediaSearchType } from '../providers/interfaces/media-provider.interface';
 
@@ -22,5 +33,35 @@ export class MediaController {
     const searchType: MediaSearchType | 'both' =
       type === 'tv' ? 'tv' : type === 'movie' ? 'movie' : 'both';
     return this.mediaService.search(trimmed, pageNum, searchType);
+  }
+
+  @Post(':id/watch-events')
+  markWatchedAlone(
+    @CurrentUser() currentUser: CurrentUserPayload,
+    @Param('id', ParseIntPipe) id: number,
+    @Query('type') type?: string,
+  ) {
+    return this.mediaService.markWatchedAlone(
+      currentUser.id,
+      id,
+      this.parseMediaType(type),
+    );
+  }
+
+  @Delete(':id/watch-events/latest')
+  undoWatchAlone(
+    @CurrentUser() currentUser: CurrentUserPayload,
+    @Param('id', ParseIntPipe) id: number,
+    @Query('type') type?: string,
+  ) {
+    return this.mediaService.undoWatchAlone(
+      currentUser.id,
+      id,
+      this.parseMediaType(type),
+    );
+  }
+
+  private parseMediaType(type?: string): MediaSearchType | undefined {
+    return type === 'tv' || type === 'movie' ? type : undefined;
   }
 }

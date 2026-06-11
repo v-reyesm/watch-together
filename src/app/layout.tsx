@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ColorSchemeProvider } from "@/components/color-scheme-provider";
 import { AuthProvider } from "@/lib/auth";
@@ -11,6 +11,20 @@ export const metadata: Metadata = {
   title: "WatchTogether",
   description:
     "App para listas compartidas de películas y series con tu pareja o amigos",
+  applicationName: "WatchTogether",
+  icons: {
+    icon: "/icons/icon-192.png",
+    apple: "/icons/icon-192.png",
+  },
+  appleWebApp: {
+    capable: true,
+    title: "WatchTogether",
+    statusBarStyle: "default",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#be123c",
 };
 
 export default function RootLayout({

@@ -118,6 +118,37 @@ export function getWatchList(id: number) {
   return apiFetch<ApiWatchList>(`/api/watch-lists/${id}`);
 }
 
+export type UpdateWatchListInput = {
+  name?: string;
+  description?: string;
+};
+
+export function updateWatchList(id: number, input: UpdateWatchListInput) {
+  return apiFetch<ApiWatchList>(`/api/watch-lists/${id}`, {
+    method: "PATCH",
+    body: input,
+  });
+}
+
+export function deleteWatchList(id: number) {
+  return apiFetch<{ ok: boolean }>(`/api/watch-lists/${id}`, {
+    method: "DELETE",
+  });
+}
+
+export function removeListMember(listId: number, memberId: number) {
+  return apiFetch<ApiWatchList>(
+    `/api/watch-lists/${listId}/members/${memberId}`,
+    { method: "DELETE" },
+  );
+}
+
+export function leaveWatchList(listId: number) {
+  return apiFetch<{ ok: boolean }>(`/api/watch-lists/${listId}/members/me`, {
+    method: "DELETE",
+  });
+}
+
 export function createInvite(listId: number) {
   return apiFetch<ApiInvite>(`/api/watch-lists/${listId}/invites`, {
     method: "POST",

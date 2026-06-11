@@ -201,6 +201,43 @@ export class WatchListService {
     return this.findOne(userId, listId);
   }
 
+  async removeMember(userId: number, listId: number, memberUserId: number) {
+    const list = await this.getAuthorizedList(userId, listId, true);
+    if (memberUserId === userId) {
+      throw new ConflictException(
+        'El owner no puede eliminarse a si mismo de la lista',
+      );
+    }
+
+    const membership = list.watchListMembers.find(
+      (member) => member.userId === memberUserId,
+    );
+    if (!membership) {
+      throw new NotFoundException('Miembro no encontrado en esta lista');
+    }
+
+    await this.memberRepo.remove(membership);
+    return this.findOne(userId, listId);
+  }
+
+  async leave(userId: number, listId: number) {
+    const list = await this.getAuthorizedList(userId, listId);
+    const membership = list.watchListMembers.find(
+      (member) => member.userId === userId,
+    );
+    if (!membership) {
+      throw new ForbiddenException('No tienes acceso a esta lista');
+    }
+    if (membership.role === 'owner') {
+      throw new ForbiddenException(
+        'El owner no puede abandonar su propia lista',
+      );
+    }
+
+    await this.memberRepo.remove(membership);
+    return { ok: true };
+  }
+
   private async getAuthorizedList(
     userId: number,
     id: number,

@@ -31,6 +31,7 @@ export function InvitePanel({
   panelId,
 }: InvitePanelProps) {
   const [invites, setInvites] = useState<ApiInvite[]>([]);
+  const [recipientEmail, setRecipientEmail] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -143,6 +144,17 @@ export function InvitePanel({
         </Button>
       </div>
 
+      <label className="mt-4 block text-sm text-muted-foreground">
+        Email de quien invitas (opcional)
+        <input
+          type="email"
+          value={recipientEmail}
+          onChange={(event) => setRecipientEmail(event.target.value)}
+          placeholder="nombre@email.com"
+          className="border-input bg-background ring-ring/50 focus-visible:ring-ring mt-1 flex h-9 w-full rounded-md border px-3 py-1 text-sm text-foreground outline-none focus-visible:ring-2"
+        />
+      </label>
+
       {error ? (
         <div role="alert" className="mt-4 rounded-lg border bg-background p-3 text-sm">
           {error}
@@ -219,7 +231,13 @@ export function InvitePanel({
                         Copiar
                       </Button>
                       <Button variant="outline" size="xs" asChild>
-                        <a href={buildInviteMailtoHref(listName, inviteUrl)}>
+                        <a
+                          href={buildInviteMailtoHref(
+                            listName,
+                            inviteUrl,
+                            recipientEmail,
+                          )}
+                        >
                           <MailIcon className="size-3" />
                           Email
                         </a>

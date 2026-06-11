@@ -152,7 +152,7 @@ curl -sf http://localhost:3000/api/health && echo "frontend ok"
 curl -sf http://localhost:8080/api/health && echo "backend ok"
 ```
 
-Docker's built-in healthcheck (when configured in `docker-compose.yml`) will automatically restart unhealthy containers thanks to `restart: unless-stopped`.
+Note that Docker's built-in healthcheck only marks a container as `unhealthy` — it does **not** restart it. `restart: unless-stopped` reacts to the process exiting, not to health status. If you want automatic restarts on `unhealthy`, run a helper such as [autoheal](https://github.com/willfarrell/docker-autoheal), or rely on your uptime monitor to alert you.
 
 ## Updating
 

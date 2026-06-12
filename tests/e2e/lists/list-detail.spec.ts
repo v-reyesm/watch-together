@@ -69,6 +69,24 @@ test.describe("list detail route", () => {
   }) => {
     await mockAuthenticatedUser(page);
 
+    const initialItem = {
+      id: 10,
+      providerName: "tmdb",
+      providerId: 666277,
+      mediaType: "movie",
+      title: "Past Lives",
+      translatedTitle: "Past Lives",
+      year: 2023,
+      posterUrl: "",
+      overview: "Two childhood friends reconnect.",
+      summary: "Two childhood friends reconnect.",
+      genres: ["Drama", "Romance"],
+      originalLanguage: "en",
+      rating: 7.8,
+      status: "pending",
+      watchedAt: null,
+    } as ApiWatchList["items"][number];
+
     let currentList: ApiWatchList = {
       id: 7,
       name: "Noches de viernes",
@@ -85,23 +103,7 @@ test.describe("list detail route", () => {
       itemCount: 1,
       pendingCount: 1,
       watchedCount: 0,
-      items: [
-        {
-          id: 10,
-          providerName: "tmdb",
-          providerId: 666277,
-          mediaType: "movie",
-          title: "Past Lives",
-          translatedTitle: "Past Lives",
-          year: 2023,
-          posterUrl: "",
-          overview: "Two childhood friends reconnect.",
-          originalLanguage: "en",
-          rating: 7.8,
-          status: "pending",
-          watchedAt: null,
-        },
-      ],
+      items: [initialItem],
     };
     let markWatchedCalled = false;
 

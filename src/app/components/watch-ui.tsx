@@ -34,6 +34,7 @@ export type WatchItem = {
   type: "pelicula" | "serie";
   meta: string;
   genre: string;
+  rating?: number;
   status: "pending" | "watchedTogether" | "watchedAlone";
   poster: Poster;
   posterUrl?: string;
@@ -498,60 +499,118 @@ export function MiniVote({
   );
 }
 
-export function SortPills() {
-  const options = ["Mejor match", "Recientes", "Mi interes"];
+export type ListSortKey = "title" | "rating" | "year";
+export type ListTabKey = "all" | "pending" | "watched";
 
+const sortOptions: { key: ListSortKey; label: string }[] = [
+  { key: "title", label: "Titulo" },
+  { key: "rating", label: "Mejor valoradas" },
+  { key: "year", label: "Mas recientes" },
+];
+
+export function SortPills({
+  active,
+  onChange,
+}: {
+  active: ListSortKey;
+  onChange: (sort: ListSortKey) => void;
+}) {
   return (
-    <div className="flex flex-wrap gap-1">
-      {options.map((option, index) => (
-        <button
-          key={option}
-          type="button"
-          disabled
-          className={cn(
-            "rounded-full px-3 py-1.5 font-mono text-[0.68rem] tracking-[0.04em] transition-colors",
-            index === 0
-              ? "bg-accent text-accent-foreground"
-              : "text-muted-foreground hover:bg-accent/50",
-          )}
-        >
-          {option}
-        </button>
-      ))}
+    <div className="flex flex-wrap gap-1" role="group" aria-label="Ordenar">
+      {sortOptions.map((option) => {
+        const isActive = option.key === active;
+        return (
+          <button
+            key={option.key}
+            type="button"
+            aria-pressed={isActive}
+            onClick={() => onChange(option.key)}
+            className={cn(
+              "rounded-full px-3 py-1.5 font-mono text-[0.68rem] tracking-[0.04em] transition-colors",
+              isActive
+                ? "bg-accent text-accent-foreground"
+                : "text-muted-foreground hover:bg-accent/50",
+            )}
+          >
+            {option.label}
+          </button>
+        );
+      })}
     </div>
   );
 }
 
-export function ListTabs() {
+export function ListTabs({
+  active,
+  counts,
+  onChange,
+}: {
+  active: ListTabKey;
+  counts: { all: number; pending: number; watched: number };
+  onChange: (tab: ListTabKey) => void;
+}) {
+  const tabs: { key: ListTabKey; label: string; count: number }[] = [
+    { key: "all", label: "Todos", count: counts.all },
+    { key: "pending", label: "Pendientes", count: counts.pending },
+    { key: "watched", label: "Vistas", count: counts.watched },
+  ];
+
   return (
-    <div className="flex gap-5 border-b">
-      {[
-        ["Pendientes", "3"],
-        ["Mejor match", ""],
-        ["Vistas", "2"],
-      ].map(([label, count], index) => (
-        <button
-          key={label}
-          type="button"
-          disabled
-          className={cn(
-            "relative pb-3 text-sm font-medium",
-            index === 0 ? "text-foreground" : "text-muted-foreground",
-          )}
-        >
-          {label}
-          {count ? (
+    <div className="flex gap-5 border-b" role="tablist" aria-label="Filtrar">
+      {tabs.map((tab) => {
+        const isActive = tab.key === active;
+        return (
+          <button
+            key={tab.key}
+            type="button"
+            role="tab"
+            aria-selected={isActive}
+            onClick={() => onChange(tab.key)}
+            className={cn(
+              "relative pb-3 text-sm font-medium transition-colors",
+              isActive
+                ? "text-foreground"
+                : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            {tab.label}
             <span className="ml-1.5 font-mono text-xs text-muted-foreground">
-              {count}
+              {tab.count}
             </span>
-          ) : null}
-          {index === 0 ? (
-            <span className="absolute inset-x-0 -bottom-px h-0.5 rounded-full bg-foreground" />
-          ) : null}
-        </button>
-      ))}
+            {isActive ? (
+              <span className="absolute inset-x-0 -bottom-px h-0.5 rounded-full bg-foreground" />
+            ) : null}
+          </button>
+        );
+      })}
     </div>
   );
+}
+
+export function filterAndSortItems(
+  items: WatchItem[],
+  {
+    tab,
+    query,
+    sort,
+  }: { tab: ListTabKey; query: string; sort: ListSortKey },
+): WatchItem[] {
+  const normalized = query.trim().toLowerCase();
+
+  const filtered = items.filter((item) => {
+    if (tab === "pending" && item.status !== "pending") return false;
+    if (tab === "watched" && item.status === "pending") return false;
+    if (normalized && !item.title.toLowerCase().includes(normalized)) {
+      return false;
+    }
+    return true;
+  });
+
+  return [...filtered].sort((a, b) => {
+    if (sort === "title") return a.title.localeCompare(b.title);
+    if (sort === "rating") return (b.rating ?? 0) - (a.rating ?? 0);
+    return (b.year ?? 0) - (a.year ?? 0);
+  });
 }
 
 export function PosterGridCard({

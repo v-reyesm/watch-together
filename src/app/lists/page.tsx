@@ -13,10 +13,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { InvitePanel } from "@/components/invite-panel";
 import {
+  filterAndSortItems,
   ListTabs,
   MemberStack,
   PosterGridCard,
   SortPills,
+  type ListSortKey,
+  type ListTabKey,
 } from "@/components/watch-ui";
 import {
   getWatchList,
@@ -37,6 +40,9 @@ export default function ListsPage() {
   const [currentList, setCurrentList] = useState<ApiWatchList | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [tab, setTab] = useState<ListTabKey>("all");
+  const [sort, setSort] = useState<ListSortKey>("title");
+  const [query, setQuery] = useState("");
 
   async function loadLists() {
     setLoading(true);
@@ -66,6 +72,18 @@ export default function ListsPage() {
   const items = useMemo(
     () => currentList?.items.map(itemFromApi) ?? [],
     [currentList],
+  );
+  const counts = useMemo(() => {
+    const pendingItems = items.filter((item) => item.status === "pending").length;
+    return {
+      all: items.length,
+      pending: pendingItems,
+      watched: items.length - pendingItems,
+    };
+  }, [items]);
+  const visibleItems = useMemo(
+    () => filterAndSortItems(items, { tab, query, sort }),
+    [items, tab, query, sort],
   );
 
   async function handleMarkWatched(itemId: number | undefined) {
@@ -193,15 +211,17 @@ export default function ListsPage() {
             <SearchIcon className="size-4 shrink-0 text-muted-foreground" />
             <input
               type="search"
-              disabled
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              aria-label="Buscar en esta lista"
               placeholder="Buscar en esta lista..."
               className="h-10 w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
             />
           </div>
-          <SortPills />
+          <SortPills active={sort} onChange={setSort} />
         </section>
 
-        <ListTabs />
+        <ListTabs active={tab} counts={counts} onChange={setTab} />
 
         {currentList ? (
           <InvitePanel
@@ -212,12 +232,20 @@ export default function ListsPage() {
           />
         ) : null}
 
+        {items.length === 0 ? (
+          <div className="rounded-lg border bg-card p-4 text-sm text-muted-foreground">
+            Esta lista aún no tiene títulos. Agrega uno desde búsqueda.
+          </div>
+        ) : visibleItems.length === 0 ? (
+          <div className="rounded-lg border bg-card p-4 text-sm text-muted-foreground">
+            Ningún título coincide con estos filtros.
+          </div>
+        ) : (
         <section className="grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5">
-          {items.map((item, index) => (
+          {visibleItems.map((item) => (
             <div key={item.id} className="flex min-w-0 flex-col gap-2">
               <PosterGridCard
                 item={item}
-                rank={index + 1}
                 onMarkWatched={() => handleMarkWatched(item.numericId)}
               />
               <div className="flex flex-wrap gap-1.5">
@@ -243,6 +271,7 @@ export default function ListsPage() {
             </div>
           ))}
         </section>
+        )}
       </div>
     </div>
   );

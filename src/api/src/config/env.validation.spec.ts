@@ -7,6 +7,8 @@ const validEnv = {
   DB_PASSWORD: 'postgres',
   DB_NAME: 'watch_together',
   JWT_SECRET: 'a-secret',
+  TMDB_API_KEY: 'a-tmdb-key',
+  TMDB_BASE_URL: 'https://api.themoviedb.org/3',
 };
 
 describe('validateEnv', () => {
@@ -20,14 +22,19 @@ describe('validateEnv', () => {
     expect(() => validateEnv(withoutPort)).not.toThrow();
   });
 
-  it.each(['DB_HOST', 'DB_USERNAME', 'DB_PASSWORD', 'DB_NAME', 'JWT_SECRET'])(
-    'throws when %s is missing',
-    (key) => {
-      const rest: Record<string, unknown> = { ...validEnv };
-      delete rest[key];
-      expect(() => validateEnv(rest)).toThrow(key);
-    },
-  );
+  it.each([
+    'DB_HOST',
+    'DB_USERNAME',
+    'DB_PASSWORD',
+    'DB_NAME',
+    'JWT_SECRET',
+    'TMDB_API_KEY',
+    'TMDB_BASE_URL',
+  ])('throws when %s is missing', (key) => {
+    const rest: Record<string, unknown> = { ...validEnv };
+    delete rest[key];
+    expect(() => validateEnv(rest)).toThrow(key);
+  });
 
   it('treats blank/whitespace values as missing', () => {
     expect(() => validateEnv({ ...validEnv, JWT_SECRET: '   ' })).toThrow(

@@ -14,6 +14,8 @@ const REQUIRED_ENV_VARS = [
   'DB_PASSWORD',
   'DB_NAME',
   'JWT_SECRET',
+  'TMDB_API_KEY',
+  'TMDB_BASE_URL',
 ] as const;
 
 function isBlank(value: unknown): boolean {

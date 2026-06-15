@@ -97,6 +97,15 @@ export type ApiSearchResult = {
   mediaType: ApiMediaType;
 };
 
+export type ApiMediaDetails = {
+  /** Streaming/flatrate provider names available for the title. */
+  providers: string[];
+  /** Director name(s), already joined when more than one. */
+  director: string | null;
+  /** Top billed cast member names. */
+  cast: string[];
+};
+
 export type AddListItemInput = {
   providerId: number;
   mediaType: ApiMediaType;
@@ -239,6 +248,13 @@ export function searchMedia(
 ) {
   const params = new URLSearchParams({ query, type });
   return apiFetch<ApiSearchResult[]>(`/api/media/search?${params.toString()}`);
+}
+
+export function getMediaDetails(mediaId: number, type: ApiMediaType) {
+  const params = new URLSearchParams({ type });
+  return apiFetch<ApiMediaDetails>(
+    `/api/media/${mediaId}/details?${params.toString()}`,
+  );
 }
 
 export function markMediaWatched(mediaId: number) {

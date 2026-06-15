@@ -35,6 +35,15 @@ export class MediaController {
     return this.mediaService.search(trimmed, pageNum, searchType);
   }
 
+  @Get(':id/details')
+  getDetails(
+    @Param('id', ParseIntPipe) id: number,
+    @Query('type') type?: string,
+  ) {
+    const mediaType: MediaSearchType = type === 'tv' ? 'tv' : 'movie';
+    return this.mediaService.getDetails(id, mediaType);
+  }
+
   @Post(':id/watch-events')
   markWatchedAlone(
     @CurrentUser() currentUser: CurrentUserPayload,

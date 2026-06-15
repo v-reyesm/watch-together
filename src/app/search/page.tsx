@@ -140,10 +140,11 @@ export default function SearchPage() {
         </div>
 
         {lists.length ? (
-          <label className="mt-3 block text-sm text-muted-foreground">
-            Agregar a{" "}
+          <label className="mt-3 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+            <span>Agregar a</span>
             <select
-              className="ml-2 rounded-md border bg-background px-2 py-1 text-foreground"
+              aria-label="Agregar a la lista"
+              className="min-h-9 rounded-md border bg-background px-3 py-1.5 text-sm font-medium text-foreground outline-none transition-colors hover:bg-accent/50 focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30"
               value={selectedListId ?? ""}
               onChange={(event) =>
                 setSelectedListId(Number(event.target.value))
@@ -286,21 +287,21 @@ export default function SearchPage() {
           ) : (
             <div className="flex flex-col gap-3">
               {visibleResults.map((result, index) => (
-                <div
+                <WatchItemRow
                   key={`${result.mediaType}-${result.id}`}
-                  className="space-y-2"
-                >
-                  <WatchItemRow item={itemFromSearchResult(result, index)} />
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="rounded-full"
-                    onClick={() => handleAdd(result)}
-                  >
-                    <PlusIcon className="size-4" />
-                    Agregar a lista
-                  </Button>
-                </div>
+                  item={itemFromSearchResult(result, index)}
+                  actions={
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-8 rounded-full"
+                      onClick={() => handleAdd(result)}
+                    >
+                      <PlusIcon className="size-4" />
+                      Agregar a lista
+                    </Button>
+                  }
+                />
               ))}
             </div>
           )

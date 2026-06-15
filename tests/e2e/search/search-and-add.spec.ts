@@ -133,7 +133,7 @@ test.describe("search and add", () => {
       page.getByRole("heading", { name: "Vidas pasadas" }),
     ).toBeVisible();
 
-    await page.locator("select").selectOption("8");
+    await page.getByLabel("Agregar a la lista").selectOption("8");
     await page.getByRole("button", { name: "Agregar a lista" }).click();
 
     await expect(page.getByRole("status")).toContainText(

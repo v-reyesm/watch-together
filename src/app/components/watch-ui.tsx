@@ -346,9 +346,11 @@ export function WatchListCard({ list }: { list: WatchList }) {
 export function WatchItemRow({
   item,
   onMarkWatched,
+  actions,
 }: {
   item: WatchItem;
   onMarkWatched?: (item: WatchItem) => void;
+  actions?: React.ReactNode;
 }) {
   const TypeIcon = item.type === "serie" ? TvIcon : FilmIcon;
 
@@ -369,19 +371,23 @@ export function WatchItemRow({
           <StatusChip status={item.status} />
         </div>
         <div className="mt-4 flex flex-wrap gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-8 rounded-full"
-            onClick={() => onMarkWatched?.(item)}
-            disabled={!onMarkWatched}
-          >
-            <CheckIcon className="size-3.5" />
-            Marcar vista
-          </Button>
-          <Button variant="ghost" size="icon-sm" aria-label="Compartir">
-            <LinkIcon className="size-4" />
-          </Button>
+          {actions ?? (
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 rounded-full"
+                onClick={() => onMarkWatched?.(item)}
+                disabled={!onMarkWatched}
+              >
+                <CheckIcon className="size-3.5" />
+                Marcar vista
+              </Button>
+              <Button variant="ghost" size="icon-sm" aria-label="Compartir">
+                <LinkIcon className="size-4" />
+              </Button>
+            </>
+          )}
         </div>
       </div>
     </div>

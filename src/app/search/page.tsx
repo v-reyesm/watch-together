@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageIntro, PosterGridCard, WatchItemRow } from "@/components/watch-ui";
+import { MediaDetailModal } from "@/components/media-detail-modal";
 import { addListItem, getWatchLists, searchMedia } from "@/lib/watch-api";
 import type { ApiSearchResult, ApiWatchList } from "@/lib/watch-api";
 import { itemFromSearchResult } from "@/lib/watch-mappers";
@@ -57,6 +58,12 @@ export default function SearchPage() {
   const [minRating, setMinRating] = useState(0);
   const [sort, setSort] = useState<SortMode>("relevance");
 
+  const [detail, setDetail] = useState<ApiSearchResult | null>(null);
+  const [addedIds, setAddedIds] = useState<Set<number>>(new Set());
+
+  const selectedListName =
+    lists.find((list) => list.id === selectedListId)?.name ?? null;
+
   useEffect(() => {
     getWatchLists().then(({ data }) => {
       const nextLists = data ?? [];
@@ -92,6 +99,9 @@ export default function SearchPage() {
       originalLanguage: result.originalLanguage,
       rating: result.rating,
     });
+    if (!error) {
+      setAddedIds((prev) => new Set(prev).add(result.id));
+    }
     setMessage(error ?? "Título agregado a la lista.");
   }
 
@@ -271,7 +281,10 @@ export default function SearchPage() {
                   key={`${result.mediaType}-${result.id}`}
                   className="flex min-w-0 flex-col gap-2"
                 >
-                  <PosterGridCard item={itemFromSearchResult(result, index)} />
+                  <PosterGridCard
+                    item={itemFromSearchResult(result, index)}
+                    onSelect={() => setDetail(result)}
+                  />
                   <Button
                     variant="outline"
                     size="xs"
@@ -290,6 +303,7 @@ export default function SearchPage() {
                 <WatchItemRow
                   key={`${result.mediaType}-${result.id}`}
                   item={itemFromSearchResult(result, index)}
+                  onOpen={() => setDetail(result)}
                   actions={
                     <Button
                       variant="outline"
@@ -313,6 +327,14 @@ export default function SearchPage() {
           </div>
         ) : null}
       </section>
+
+      <MediaDetailModal
+        result={detail}
+        onClose={() => setDetail(null)}
+        onAdd={handleAdd}
+        addToLabel={selectedListName}
+        added={detail ? addedIds.has(detail.id) : false}
+      />
     </div>
   );
 }

@@ -346,22 +346,45 @@ export function WatchListCard({ list }: { list: WatchList }) {
 export function WatchItemRow({
   item,
   onMarkWatched,
+  onOpen,
   actions,
 }: {
   item: WatchItem;
   onMarkWatched?: (item: WatchItem) => void;
+  onOpen?: () => void;
   actions?: React.ReactNode;
 }) {
   const TypeIcon = item.type === "serie" ? TvIcon : FilmIcon;
 
   return (
     <div className="grid grid-cols-[72px_1fr] gap-4 rounded-lg border bg-card p-3">
-      <PosterBlock item={item} />
+      {onOpen ? (
+        <button
+          type="button"
+          onClick={onOpen}
+          aria-label={`Ver detalle de ${item.title}`}
+          className="block rounded-[4px] transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
+        >
+          <PosterBlock item={item} />
+        </button>
+      ) : (
+        <PosterBlock item={item} />
+      )}
       <div className="min-w-0 py-1">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <h3 className="truncate font-semibold tracking-tight">
-              {item.title}
+              {onOpen ? (
+                <button
+                  type="button"
+                  onClick={onOpen}
+                  className="text-left hover:underline focus-visible:underline focus-visible:outline-none"
+                >
+                  {item.title}
+                </button>
+              ) : (
+                item.title
+              )}
             </h3>
             <p className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
               <TypeIcon className="size-3.5" />
@@ -512,18 +535,21 @@ export function PosterGridCard({
   item,
   rank,
   onMarkWatched,
+  onSelect,
 }: {
   item: WatchItem;
   rank?: number;
   onMarkWatched?: (item: WatchItem) => void;
+  onSelect?: (item: WatchItem) => void;
 }) {
   const watched = item.status !== "pending";
+  const handleClick = onSelect ?? onMarkWatched;
 
   return (
     <button
       type="button"
-      onClick={() => onMarkWatched?.(item)}
-      disabled={!onMarkWatched}
+      onClick={() => handleClick?.(item)}
+      disabled={!handleClick}
       className="group flex min-w-0 flex-col gap-2 text-left"
     >
       <span className="relative block">

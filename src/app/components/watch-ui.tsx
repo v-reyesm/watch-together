@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { PosterImage } from "@/components/poster-image";
 
 export type Poster = {
   bg: string;
@@ -35,6 +36,7 @@ export type WatchItem = {
   genre: string;
   status: "pending" | "watchedTogether" | "watchedAlone";
   poster: Poster;
+  posterUrl?: string;
   votes: {
     me: VoteValue;
     partner: VoteValue;
@@ -245,6 +247,12 @@ export function PosterBlock({
       <div className="absolute bottom-3 left-3 right-3 text-balance text-base font-semibold leading-none tracking-tight">
         {item.title}
       </div>
+      {item.posterUrl ? (
+        <PosterImage
+          src={item.posterUrl}
+          alt={`${item.title}, ${item.year}`}
+        />
+      ) : null}
     </div>
   );
 }

@@ -33,6 +33,7 @@ export function itemFromApi(item: ApiWatchItem, index = 0): WatchItem {
     genre: item.mediaType === "tv" ? "Serie" : "Película",
     status: item.status,
     poster: posterPalette[index % posterPalette.length],
+    posterUrl: item.posterUrl || undefined,
     votes: { me: null, partner: null },
   };
 }
@@ -69,6 +70,7 @@ export function itemFromSearchResult(
     genre: item.mediaType === "tv" ? "Serie" : "Película",
     status: "pending",
     poster: posterPalette[index % posterPalette.length],
+    posterUrl: item.posterUrl || undefined,
     votes: { me: null, partner: null },
   };
 }

@@ -1,5 +1,6 @@
 import type {
   ApiSearchResult,
+  ApiTopRatedCover,
   ApiWatchItem,
   ApiWatchList,
 } from "@/lib/watch-api";
@@ -47,6 +48,33 @@ export function listFromApi(list: ApiWatchList, index = 0): WatchList {
     color: listColors[index % listColors.length],
     members: list.members.map((member) => member.initials || "?"),
     items: list.items.map(itemFromApi),
+  };
+}
+
+export function itemFromTopRatedCover(
+  item: ApiTopRatedCover,
+  index = 0,
+): WatchItem {
+  const releaseDate = item.releaseDate ? new Date(item.releaseDate) : null;
+  const year = releaseDate?.getUTCFullYear();
+  return {
+    id: `${item.mediaType}-${item.id}`,
+    providerId: item.id,
+    title: item.translatedTitle || item.title,
+    year: year && year > 1900 ? year : 0,
+    type: item.mediaType === "tv" ? "serie" : "pelicula",
+    meta: [
+      item.mediaType === "tv" ? "Serie" : "Película",
+      item.rating ? `${item.rating.toFixed(1)} TMDB` : null,
+    ]
+      .filter(Boolean)
+      .join(" · "),
+    genre: item.mediaType === "tv" ? "Serie" : "Película",
+    rating: item.rating ?? 0,
+    status: "pending",
+    poster: posterPalette[index % posterPalette.length],
+    posterUrl: item.posterUrl || undefined,
+    votes: { me: null, partner: null },
   };
 }
 

@@ -8,6 +8,7 @@ import {
   EyeIcon,
   FilmIcon,
   LinkIcon,
+  ListIcon,
   ListPlusIcon,
   SearchIcon,
   SparklesIcon,
@@ -192,6 +193,87 @@ export function MetricTile({
       </div>
     </div>
   );
+}
+
+export type MetricStripItem = {
+  label: string;
+  value: string;
+  detail?: string;
+  icon: React.ComponentType<{ className?: string }>;
+};
+
+export function MetricStrip({ stats }: { stats: MetricStripItem[] }) {
+  return (
+    <div className="flex flex-wrap items-center gap-x-8 gap-y-3 rounded-lg border bg-card px-4 py-3 shadow-[0_1px_0_rgba(24,22,20,0.04)]">
+      {stats.map((stat) => {
+        const Icon = stat.icon;
+        return (
+          <div key={stat.label} className="flex items-center gap-3">
+            <span className="flex size-8 items-center justify-center rounded-full bg-accent text-accent-foreground">
+              <Icon className="size-4" />
+            </span>
+            <div className="min-w-0">
+              <p className="font-mono text-[0.6rem] uppercase tracking-[0.16em] text-muted-foreground">
+                {stat.label}
+              </p>
+              <p className="text-lg font-semibold leading-tight tracking-tight text-primary">
+                {stat.value}
+                {stat.detail ? (
+                  <span className="ml-1.5 text-xs font-normal text-muted-foreground">
+                    {stat.detail}
+                  </span>
+                ) : null}
+              </p>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+export function SuggestionCard({
+  item,
+  listName,
+  href,
+}: {
+  item: WatchItem;
+  listName: string;
+  href?: string;
+}) {
+  const content = (
+    <>
+      <span className="relative block">
+        <PosterBlock
+          item={item}
+          className="w-full transition group-hover:-translate-y-0.5"
+        />
+      </span>
+      <span className="min-w-0">
+        <span className="block truncate text-sm font-semibold tracking-tight">
+          {item.title}
+        </span>
+        <span className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
+          <ListIcon className="size-3 shrink-0" />
+          <span className="truncate">{listName}</span>
+        </span>
+      </span>
+    </>
+  );
+
+  if (href) {
+    return (
+      <Link
+        href={href}
+        className="group flex min-w-0 flex-col gap-2 text-left"
+        title={`${item.title} · ${listName}`}
+      >
+        {content}
+      </Link>
+    );
+  }
+
+  return <div className="group flex min-w-0 flex-col gap-2">{content}</div>;
 }
 
 export function PosterBlock({

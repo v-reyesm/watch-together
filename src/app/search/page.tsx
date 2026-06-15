@@ -45,6 +45,46 @@ function resultYear(result: ApiSearchResult): number {
   return year && year > 1900 ? year : 0;
 }
 
+/** Subtle shimmer placeholders shown while a search is loading. */
+function SearchSkeleton({ view }: { view: ViewMode }) {
+  const placeholders = Array.from({ length: view === "grid" ? 8 : 5 });
+
+  if (view === "grid") {
+    return (
+      <div
+        role="status"
+        aria-label="Cargando resultados"
+        className="grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-4"
+      >
+        {placeholders.map((_, index) => (
+          <div key={index} className="flex min-w-0 flex-col gap-2">
+            <div className="aspect-[2/3] animate-pulse rounded-[4px] bg-muted" />
+            <div className="h-7 animate-pulse rounded-full bg-muted" />
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <div role="status" aria-label="Cargando resultados" className="flex flex-col gap-3">
+      {placeholders.map((_, index) => (
+        <div
+          key={index}
+          className="grid grid-cols-[72px_1fr] gap-4 rounded-lg border bg-card p-3"
+        >
+          <div className="aspect-[2/3] animate-pulse rounded-[4px] bg-muted" />
+          <div className="flex flex-col gap-2 py-1">
+            <div className="h-4 w-2/3 animate-pulse rounded bg-muted" />
+            <div className="h-3 w-1/3 animate-pulse rounded bg-muted" />
+            <div className="mt-3 h-8 w-32 animate-pulse rounded-full bg-muted" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function SearchPage() {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<ApiSearchResult[]>([]);
@@ -53,7 +93,7 @@ export default function SearchPage() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
-  const [view, setView] = useState<ViewMode>("list");
+  const [view, setView] = useState<ViewMode>("grid");
   const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
   const [minRating, setMinRating] = useState(0);
   const [sort, setSort] = useState<SortMode>("relevance");
@@ -267,13 +307,15 @@ export default function SearchPage() {
           </div>
         ) : null}
 
-        {results.length && !visibleResults.length ? (
+        {loading ? <SearchSkeleton view={view} /> : null}
+
+        {!loading && results.length && !visibleResults.length ? (
           <div className="rounded-lg border bg-card p-4 text-sm text-muted-foreground">
             Ningún resultado coincide con los filtros seleccionados.
           </div>
         ) : null}
 
-        {visibleResults.length ? (
+        {!loading && visibleResults.length ? (
           view === "grid" ? (
             <div className="grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-4">
               {visibleResults.map((result, index) => (

@@ -105,6 +105,22 @@ export class WatchListService {
         )
         .filter((item) => item.status === 'pending')
         .slice(0, 6),
+      // Every pending item across all the user's lists, each tagged with the
+      // list it belongs to. Unlike `lists[].items` (truncated to a 4-item
+      // preview), this is the full set so the home "Para ver" suggestions can
+      // sample from titles deep in a list, not just the first four.
+      pendingSuggestions: rawLists.flatMap((list) =>
+        (list.items ?? [])
+          .map((item) =>
+            this.serializeItem(item, list.watchEvents ?? [], userId),
+          )
+          .filter((item) => item.status === 'pending')
+          .map((item) => ({
+            ...item,
+            listId: list.id,
+            listName: list.name,
+          })),
+      ),
     };
   }
 

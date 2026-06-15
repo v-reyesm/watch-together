@@ -4,7 +4,11 @@ import { MediaService } from './media.service';
 
 describe('MediaController', () => {
   let controller: MediaController;
-  let service: { search: jest.Mock; getDetails: jest.Mock };
+  let service: {
+    search: jest.Mock;
+    getDetails: jest.Mock;
+    getTopRated: jest.Mock;
+  };
 
   beforeEach(async () => {
     service = {
@@ -14,6 +18,7 @@ describe('MediaController', () => {
         director: 'Jane Director',
         cast: ['Main Lead'],
       }),
+      getTopRated: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -42,6 +47,26 @@ describe('MediaController', () => {
     it('passes through the tv media type', async () => {
       await controller.getDetails(42, 'tv');
       expect(service.getDetails).toHaveBeenCalledWith(42, 'tv');
+    });
+  });
+
+  describe('topRated', () => {
+    it('defaults to 3 covers when no limit is provided', () => {
+      service.getTopRated.mockReturnValue([]);
+      controller.topRated();
+      expect(service.getTopRated).toHaveBeenCalledWith(3);
+    });
+
+    it('parses a numeric limit from the query string', () => {
+      service.getTopRated.mockReturnValue([]);
+      controller.topRated('6');
+      expect(service.getTopRated).toHaveBeenCalledWith(6);
+    });
+
+    it('falls back to 3 for a non-numeric limit', () => {
+      service.getTopRated.mockReturnValue([]);
+      controller.topRated('abc');
+      expect(service.getTopRated).toHaveBeenCalledWith(3);
     });
   });
 });

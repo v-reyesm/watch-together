@@ -19,10 +19,11 @@ import { InvitesModule } from './invites/invites.module';
 import { ProvidersModule } from './providers/providers.module';
 import { GenresModule } from './genres/genres.module';
 import { GlobalJwtAuthGuard } from './auth/guards/global-jwt-auth.guard';
+import { validateEnv } from './config/env.validation';
 
 @Module({
   imports: [
-    ConfigModule.forRoot(),
+    ConfigModule.forRoot({ validate: validateEnv }),
     TypeOrmModule.forRoot({
       ...AppDataSource.options,
       autoLoadEntities: true,

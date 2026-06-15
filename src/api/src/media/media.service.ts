@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, IsNull, Repository } from 'typeorm';
+import { In, IsNull, Not, Repository } from 'typeorm';
 import { Movie } from '../movies/entities/movie.entity';
 import { TvSerie } from '../tv-series/entities/tv-serie.entity';
 import { TmdbSearchCache } from './entities/tmdb-search-cache.entity';
@@ -12,6 +12,16 @@ import {
 } from '../providers/interfaces/media-provider.interface';
 import { Media } from './entities/media.entity';
 import { WatchEvent } from '../watch-list/entities/watch-event.entity';
+
+export interface TopRatedCover {
+  id: number;
+  title: string;
+  translatedTitle: string;
+  posterUrl: string;
+  rating: number;
+  mediaType: 'movie' | 'tv';
+  releaseDate: Date | null;
+}
 
 @Injectable()
 export class MediaService {
@@ -320,6 +330,53 @@ export class MediaService {
 
     await this.watchEventRepo.remove(latest);
     return { ok: true };
+  }
+
+  /**
+   * Returns a random subset of the best-rated titles stored in our DB.
+   *
+   * "Best rated" is defined by the TMDB `rating` we persist; we pull a pool of
+   * the highest-rated titles (ORDER BY rating DESC) and then pick a random
+   * subset from that pool, so the login view shows quality covers that still
+   * vary on each visit. Titles without a poster are skipped. This is public
+   * (no auth) because it powers the unauthenticated sign-in page.
+   */
+  async getTopRated(limit = 3): Promise<TopRatedCover[]> {
+    const safeLimit = Math.min(Math.max(Math.trunc(limit) || 0, 1), 12);
+    // Pull a generously sized pool of top-rated titles so the random subset
+    // still feels fresh without scanning the whole table.
+    const poolSize = Math.max(safeLimit * 8, 30);
+
+    const pool = await this.mediaRepo.find({
+      where: { rating: Not(IsNull()) },
+      order: { rating: 'DESC' },
+      take: poolSize,
+    });
+
+    const withPoster = pool.filter(
+      (m) => typeof m.posterUrl === 'string' && m.posterUrl.trim().length > 0,
+    );
+
+    return this.shuffle(withPoster)
+      .slice(0, safeLimit)
+      .map((m) => ({
+        id: m.tmdbId ?? m.id,
+        title: m.title,
+        translatedTitle: m.translatedTitle,
+        posterUrl: m.posterUrl,
+        rating: m.rating ?? 0,
+        mediaType: m.mediaType,
+        releaseDate: m.releaseDate ?? null,
+      }));
+  }
+
+  private shuffle<T>(items: T[]): T[] {
+    const result = [...items];
+    for (let i = result.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [result[i], result[j]] = [result[j], result[i]];
+    }
+    return result;
   }
 
   async getWatchHistory(userId: number, limit = 20, offset = 0) {

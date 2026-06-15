@@ -80,6 +80,27 @@ const summary = {
       watchedAt: null,
     },
   ],
+  pendingSuggestions: [
+    {
+      id: 10,
+      providerName: "tmdb",
+      providerId: 100,
+      mediaType: "movie" as const,
+      title: "Pendiente",
+      translatedTitle: "Pendiente",
+      year: 2026,
+      posterUrl: "",
+      summary: "",
+      overview: "",
+      genres: [],
+      originalLanguage: "es",
+      rating: 0,
+      status: "pending" as const,
+      watchedAt: null,
+      listId: 5,
+      listName: "Noches de viernes",
+    },
+  ],
 };
 
 describe("Home", () => {
@@ -107,11 +128,39 @@ describe("Home", () => {
 
     render(<Home />);
 
-    expect(await screen.findByText("Noches de viernes")).toBeInTheDocument();
+    expect(
+      (await screen.findAllByText("Noches de viernes")).length,
+    ).toBeGreaterThan(0);
     await waitFor(() => {
       expect(screen.getByText("1/2")).toBeInTheDocument();
     });
     expect(screen.getAllByText("Pendiente").length).toBeGreaterThan(0);
+  });
+
+  it("greets the logged-in user by name", async () => {
+    (getWatchSummary as jest.Mock).mockResolvedValue({
+      data: summary,
+      status: 200,
+    });
+
+    render(<Home />);
+
+    expect(await screen.findByText("Hola, Ana")).toBeInTheDocument();
+  });
+
+  it("renders random to-watch suggestions tagged with their list", async () => {
+    (getWatchSummary as jest.Mock).mockResolvedValue({
+      data: summary,
+      status: 200,
+    });
+
+    render(<Home />);
+
+    expect(await screen.findByText("Para ver")).toBeInTheDocument();
+    // The list name appears both on the list card and the suggestion badge.
+    expect(
+      (await screen.findAllByText("Noches de viernes")).length,
+    ).toBeGreaterThan(1);
   });
 
   it("creates an invite from the dashboard banner", async () => {
@@ -139,7 +188,7 @@ describe("Home", () => {
 
     render(<Home />);
 
-    await screen.findByText("Noches de viernes");
+    await screen.findAllByText("Noches de viernes");
     fireEvent.click(screen.getByRole("button", { name: /crear invitación/i }));
 
     expect(
@@ -177,7 +226,7 @@ describe("Home", () => {
 
     render(<Home />);
 
-    await screen.findByText("Noches de viernes");
+    await screen.findAllByText("Noches de viernes");
     fireEvent.click(screen.getByRole("button", { name: /crear invitación/i }));
     await screen.findByRole("button", { name: /copiar/i });
 

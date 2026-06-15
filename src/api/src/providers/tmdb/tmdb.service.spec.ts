@@ -125,7 +125,9 @@ describe('TmdbService', () => {
             data: {
               id: 1,
               results: {
-                US: { flatrate: [{ provider_id: 8, provider_name: 'Netflix' }] },
+                US: {
+                  flatrate: [{ provider_id: 8, provider_name: 'Netflix' }],
+                },
                 DE: { flatrate: [{ provider_id: 2, provider_name: 'WOW' }] },
               },
             },

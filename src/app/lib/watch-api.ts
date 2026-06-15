@@ -241,6 +241,27 @@ export function searchMedia(
   return apiFetch<ApiSearchResult[]>(`/api/media/search?${params.toString()}`);
 }
 
+export type ApiTopRatedCover = {
+  id: number;
+  title: string;
+  translatedTitle: string;
+  posterUrl: string;
+  rating: number;
+  mediaType: ApiMediaType;
+  releaseDate: string | null;
+};
+
+/**
+ * Public (no-auth) endpoint that powers the sign-in / register covers:
+ * a random subset of the best-rated titles already stored in our DB.
+ */
+export function getTopRatedCovers(limit = 3) {
+  const params = new URLSearchParams({ limit: String(limit) });
+  return apiFetch<ApiTopRatedCover[]>(
+    `/api/media/top-rated?${params.toString()}`,
+  );
+}
+
 export function markMediaWatched(mediaId: number) {
   return apiFetch<{ ok: boolean; watchEvent: { id: number; mediaId: number; watchedAt: string } }>(
     `/api/media/${mediaId}/watch-events`,

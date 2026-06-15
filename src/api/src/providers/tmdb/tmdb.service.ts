@@ -214,8 +214,11 @@ export class TmdbService implements MediaProvider {
     if (!results) return [];
 
     const preferredRegion = process.env.TMDB_WATCH_REGION || 'US';
+    // Only the configured region, then US as a sensible default. Never fall back
+    // to an arbitrary country: showing "available on X" for a region the user
+    // can't stream from is more misleading than showing nothing.
     const region: TmdbWatchProviderRegion | undefined =
-      results[preferredRegion] ?? results['US'] ?? Object.values(results)[0];
+      results[preferredRegion] ?? results['US'];
 
     if (!region) return [];
 

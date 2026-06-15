@@ -94,7 +94,9 @@ describe('TmdbService', () => {
       expect(details.providers).toEqual([]);
     });
 
-    it('falls back to the US region then the first available region', async () => {
+    it('ignores regions other than the configured/US region', async () => {
+      // Only a non-preferred, non-US region is available. We must NOT surface it,
+      // since wrong-country availability is more misleading than showing nothing.
       httpGet.mockImplementation((url: string) => {
         if (url.includes('/credits'))
           return of({ data: { id: 1, cast: [], crew: [] } });
@@ -111,7 +113,28 @@ describe('TmdbService', () => {
       });
 
       const details = await service.getMediaDetails('tv', 1);
-      expect(details.providers).toEqual(['WOW']);
+      expect(details.providers).toEqual([]);
+    });
+
+    it('uses the US region when no configured region is set', async () => {
+      httpGet.mockImplementation((url: string) => {
+        if (url.includes('/credits'))
+          return of({ data: { id: 1, cast: [], crew: [] } });
+        if (url.includes('/watch/providers'))
+          return of({
+            data: {
+              id: 1,
+              results: {
+                US: { flatrate: [{ provider_id: 8, provider_name: 'Netflix' }] },
+                DE: { flatrate: [{ provider_id: 2, provider_name: 'WOW' }] },
+              },
+            },
+          });
+        return of({ data: {} });
+      });
+
+      const details = await service.getMediaDetails('movie', 1);
+      expect(details.providers).toEqual(['Netflix']);
     });
   });
 });

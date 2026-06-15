@@ -6,6 +6,7 @@ import { TvSerie } from '../tv-series/entities/tv-serie.entity';
 import { TmdbSearchCache } from './entities/tmdb-search-cache.entity';
 import { TmdbService } from '../providers/tmdb/tmdb.service';
 import {
+  MediaExtraDetails,
   MediaSearchResult,
   MediaSearchType,
 } from '../providers/interfaces/media-provider.interface';
@@ -72,6 +73,19 @@ export class MediaService {
     await this.upsertCache(normalizedQuery, page, searchType, mediaIds);
 
     return results;
+  }
+
+  /**
+   * Resolve extra title metadata (streaming providers, director, top cast)
+   * for a single title via TMDB. Kept out of the search list response so the
+   * list stays a single TMDB call; the frontend fetches this lazily when a
+   * result's detail view is opened.
+   */
+  async getDetails(
+    id: number,
+    mediaType: MediaSearchType,
+  ): Promise<MediaExtraDetails> {
+    return this.tmdbService.getMediaDetails(mediaType, id);
   }
 
   private isCacheValid(createdAt: Date): boolean {

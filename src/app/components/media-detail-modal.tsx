@@ -1,17 +1,22 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Dialog } from "radix-ui";
 import {
   CheckIcon,
   FilmIcon,
+  MonitorPlayIcon,
   PlusIcon,
   StarIcon,
   TvIcon,
+  UsersIcon,
+  VideoIcon,
   XIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PosterImage } from "@/components/poster-image";
-import type { ApiSearchResult } from "@/lib/watch-api";
+import { getMediaDetails } from "@/lib/watch-api";
+import type { ApiMediaDetails, ApiSearchResult } from "@/lib/watch-api";
 
 function resultYear(result: ApiSearchResult): number | null {
   if (!result.releaseDate) return null;
@@ -34,6 +39,32 @@ export function MediaDetailModal({
   /** True once this title has been added in the current session. */
   added?: boolean;
 }) {
+  const [details, setDetails] = useState<ApiMediaDetails | null>(null);
+  const [detailsLoading, setDetailsLoading] = useState(false);
+
+  useEffect(() => {
+    if (!result) {
+      setDetails(null);
+      setDetailsLoading(false);
+      return;
+    }
+
+    let active = true;
+    setDetails(null);
+    setDetailsLoading(true);
+    getMediaDetails(result.id, result.mediaType)
+      .then(({ data }) => {
+        if (active) setDetails(data);
+      })
+      .finally(() => {
+        if (active) setDetailsLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [result]);
+
   const open = result != null;
   const TypeIcon = result?.mediaType === "tv" ? TvIcon : FilmIcon;
   const year = result ? resultYear(result) : null;
@@ -154,6 +185,62 @@ export function MediaDetailModal({
                       </span>
                     ))}
                   </div>
+                ) : null}
+
+                {/* Streaming providers, director and main cast (from TMDB). */}
+                {detailsLoading ? (
+                  <div className="flex flex-col gap-3">
+                    <div className="h-4 w-40 animate-pulse rounded bg-muted" />
+                    <div className="h-4 w-56 animate-pulse rounded bg-muted" />
+                  </div>
+                ) : details &&
+                  (details.providers.length ||
+                    details.director ||
+                    details.cast.length) ? (
+                  <dl className="flex flex-col gap-3 border-t pt-4 text-sm">
+                    {details.providers.length ? (
+                      <div className="flex flex-col gap-1.5">
+                        <dt className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                          <MonitorPlayIcon className="size-3.5" />
+                          Disponible en
+                        </dt>
+                        <dd className="flex flex-wrap gap-1.5">
+                          {details.providers.map((provider) => (
+                            <span
+                              key={provider}
+                              className="rounded-full bg-accent px-2.5 py-1 text-xs font-medium text-accent-foreground"
+                            >
+                              {provider}
+                            </span>
+                          ))}
+                        </dd>
+                      </div>
+                    ) : null}
+
+                    {details.director ? (
+                      <div className="flex items-center gap-2">
+                        <dt className="flex items-center gap-1.5 text-muted-foreground">
+                          <VideoIcon className="size-3.5" />
+                          Dirección
+                        </dt>
+                        <dd className="font-medium text-foreground">
+                          {details.director}
+                        </dd>
+                      </div>
+                    ) : null}
+
+                    {details.cast.length ? (
+                      <div className="flex items-start gap-2">
+                        <dt className="flex shrink-0 items-center gap-1.5 text-muted-foreground">
+                          <UsersIcon className="size-3.5" />
+                          Reparto
+                        </dt>
+                        <dd className="font-medium text-foreground">
+                          {details.cast.join(", ")}
+                        </dd>
+                      </div>
+                    ) : null}
+                  </dl>
                 ) : null}
               </div>
             </div>

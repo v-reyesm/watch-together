@@ -249,10 +249,7 @@ export function PosterBlock({
         {item.title}
       </div>
       {item.posterUrl ? (
-        <PosterImage
-          src={item.posterUrl}
-          alt={`${item.title}, ${item.year}`}
-        />
+        <PosterImage key={item.posterUrl} src={item.posterUrl} alt="" />
       ) : null}
     </div>
   );
@@ -388,114 +385,6 @@ export function WatchItemRow({
         </div>
       </div>
     </div>
-  );
-}
-
-const ratingMeta = {
-  muchas: { label: "Quiero verla", short: "Quiero", glyph: "***", value: 3 },
-  late: { label: "Me interesa", short: "Interesa", glyph: "**", value: 2 },
-  igual: { label: "Puede ser", short: "Quizas", glyph: ".", value: 1 },
-  paso: { label: "No me interesa", short: "No", glyph: "x", value: 0 },
-} as const;
-
-function ratingValue(value: VoteValue) {
-  return value ? ratingMeta[value].value : null;
-}
-
-function scoreMatch(votes: WatchItem["votes"]) {
-  const mine = ratingValue(votes.me);
-  const partner = ratingValue(votes.partner);
-
-  if (mine == null && partner == null) {
-    return { label: "Sin votos", score: 0, complete: false };
-  }
-
-  if (mine == null || partner == null) {
-    return {
-      label: "Esperando voto",
-      score: mine ?? partner ?? 0,
-      complete: false,
-    };
-  }
-
-  const score = mine + partner;
-  if (mine === 0 || partner === 0) {
-    return { label: "Baja prioridad", score, complete: true };
-  }
-  if (score >= 6) {
-    return { label: "Match alto", score, complete: true };
-  }
-  if (score >= 4) {
-    return { label: "Buen candidato", score, complete: true };
-  }
-  if (score >= 2) {
-    return { label: "Puede ser", score, complete: true };
-  }
-  return { label: "Solo a uno le gusta", score, complete: true };
-}
-
-export function MatchBadge({ item }: { item: WatchItem }) {
-  const match = scoreMatch(item.votes);
-  const strong = match.label === "Match alto";
-  const good = match.label === "Buen candidato";
-
-  return (
-    <span
-      className={cn(
-        "inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-[0.68rem] font-medium leading-none",
-        strong
-          ? "bg-primary text-primary-foreground"
-          : good
-            ? "bg-accent text-accent-foreground"
-            : "border text-muted-foreground",
-      )}
-    >
-      <span
-        className={cn(
-          "size-1.5 rounded-full",
-          strong
-            ? "bg-primary-foreground"
-            : good
-              ? "bg-accent-foreground"
-              : "bg-muted-foreground",
-        )}
-      />
-      {match.label}
-      {match.complete ? (
-        <span className="font-mono opacity-70">{match.score}</span>
-      ) : null}
-    </span>
-  );
-}
-
-export function MiniVote({
-  value,
-  person,
-  secondary,
-}: {
-  value: VoteValue;
-  person: string;
-  secondary?: boolean;
-}) {
-  const meta = value ? ratingMeta[value] : null;
-
-  return (
-    <span className="inline-flex min-w-0 items-center gap-1.5 rounded-full border bg-background px-2 py-1 text-[0.68rem] text-foreground">
-      <span
-        className="flex size-4 shrink-0 items-center justify-center rounded-full text-[0.55rem] font-semibold text-white"
-        style={{ backgroundColor: secondary ? "#3a8d9a" : "#1e4a44" }}
-      >
-        {person}
-      </span>
-      {meta ? (
-        <span className="truncate">
-          <span className="font-mono tracking-[0.06em]">{meta.glyph}</span>{" "}
-          {meta.short}
-        </span>
-      ) : (
-        <span className="truncate italic text-muted-foreground">sin voto</span>
-      )}
-    </span>
   );
 }
 
@@ -651,17 +540,11 @@ export function PosterGridCard({
           {item.genre}
         </span>
       </span>
-      <span className="flex flex-wrap gap-1.5">
-        {watched ? (
+      {watched ? (
+        <span className="flex flex-wrap gap-1.5">
           <StatusChip status={item.status} />
-        ) : (
-          <MatchBadge item={item} />
-        )}
-      </span>
-      <span className="flex flex-wrap gap-1.5">
-        <MiniVote value={item.votes.me} person="T" />
-        <MiniVote value={item.votes.partner} person="A" secondary />
-      </span>
+        </span>
+      ) : null}
     </button>
   );
 }

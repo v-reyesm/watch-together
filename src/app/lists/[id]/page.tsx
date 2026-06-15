@@ -15,15 +15,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { InvitePanel } from "@/components/invite-panel";
 import {
-  filterAndSortItems,
   ListTabs,
   MemberStack,
   PosterGridCard,
   SortPills,
-  type ListSortKey,
-  type ListTabKey,
   type WatchItem,
 } from "@/components/watch-ui";
+import { useListFilters } from "@/lib/use-list-filters";
 import { useAuth } from "@/lib/auth";
 import {
   deleteWatchList,
@@ -51,9 +49,6 @@ export default function ListDetailPage() {
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [confirmingLeave, setConfirmingLeave] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [tab, setTab] = useState<ListTabKey>("all");
-  const [sort, setSort] = useState<ListSortKey>("title");
-  const [query, setQuery] = useState("");
 
   async function loadList() {
     if (!Number.isFinite(listId) || listId <= 0) {
@@ -75,14 +70,8 @@ export default function ListDetailPage() {
   }, [listId]);
 
   const items = useMemo(() => list?.items.map(itemFromApi) ?? [], [list]);
-  const counts = useMemo(() => {
-    const pending = items.filter((item) => item.status === "pending").length;
-    return { all: items.length, pending, watched: items.length - pending };
-  }, [items]);
-  const visibleItems = useMemo(
-    () => filterAndSortItems(items, { tab, query, sort }),
-    [items, tab, query, sort],
-  );
+  const { tab, setTab, sort, setSort, query, setQuery, counts, visibleItems } =
+    useListFilters(items);
   const members = list?.members.map((member) => member.initials || "?") ?? [];
   const isOwner =
     list != null &&

@@ -13,14 +13,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { InvitePanel } from "@/components/invite-panel";
 import {
-  filterAndSortItems,
   ListTabs,
   MemberStack,
   PosterGridCard,
   SortPills,
-  type ListSortKey,
-  type ListTabKey,
 } from "@/components/watch-ui";
+import { useListFilters } from "@/lib/use-list-filters";
 import {
   getWatchList,
   getWatchLists,
@@ -40,9 +38,6 @@ export default function ListsPage() {
   const [currentList, setCurrentList] = useState<ApiWatchList | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState<ListTabKey>("all");
-  const [sort, setSort] = useState<ListSortKey>("title");
-  const [query, setQuery] = useState("");
 
   async function loadLists() {
     setLoading(true);
@@ -73,18 +68,8 @@ export default function ListsPage() {
     () => currentList?.items.map(itemFromApi) ?? [],
     [currentList],
   );
-  const counts = useMemo(() => {
-    const pendingItems = items.filter((item) => item.status === "pending").length;
-    return {
-      all: items.length,
-      pending: pendingItems,
-      watched: items.length - pendingItems,
-    };
-  }, [items]);
-  const visibleItems = useMemo(
-    () => filterAndSortItems(items, { tab, query, sort }),
-    [items, tab, query, sort],
-  );
+  const { tab, setTab, sort, setSort, query, setQuery, counts, visibleItems } =
+    useListFilters(items);
 
   async function handleMarkWatched(itemId: number | undefined) {
     if (!currentList || !itemId) return;
@@ -241,36 +226,36 @@ export default function ListsPage() {
             Ningún título coincide con estos filtros.
           </div>
         ) : (
-        <section className="grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5">
-          {visibleItems.map((item) => (
-            <div key={item.id} className="flex min-w-0 flex-col gap-2">
-              <PosterGridCard
-                item={item}
-                onMarkWatched={() => handleMarkWatched(item.numericId)}
-              />
-              <div className="flex flex-wrap gap-1.5">
-                {item.status !== "pending" ? (
+          <section className="grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5">
+            {visibleItems.map((item) => (
+              <div key={item.id} className="flex min-w-0 flex-col gap-2">
+                <PosterGridCard
+                  item={item}
+                  onMarkWatched={() => handleMarkWatched(item.numericId)}
+                />
+                <div className="flex flex-wrap gap-1.5">
+                  {item.status !== "pending" ? (
+                    <Button
+                      variant="outline"
+                      size="xs"
+                      onClick={() => handleUndoWatch(item.numericId)}
+                    >
+                      <RotateCcwIcon className="size-3" />
+                      Deshacer
+                    </Button>
+                  ) : null}
                   <Button
-                    variant="outline"
+                    variant="ghost"
                     size="xs"
-                    onClick={() => handleUndoWatch(item.numericId)}
+                    onClick={() => handleRemoveItem(item.numericId, item.title)}
                   >
-                    <RotateCcwIcon className="size-3" />
-                    Deshacer
+                    <Trash2Icon className="size-3" />
+                    Quitar
                   </Button>
-                ) : null}
-                <Button
-                  variant="ghost"
-                  size="xs"
-                  onClick={() => handleRemoveItem(item.numericId, item.title)}
-                >
-                  <Trash2Icon className="size-3" />
-                  Quitar
-                </Button>
+                </div>
               </div>
-            </div>
-          ))}
-        </section>
+            ))}
+          </section>
         )}
       </div>
     </div>

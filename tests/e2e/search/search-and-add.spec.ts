@@ -141,3 +141,44 @@ test.describe("search and add", () => {
     );
   });
 });
+
+test.describe("search loading state", () => {
+  test("shows a subtle loading skeleton while a search is in flight", async ({
+    page,
+  }) => {
+    await mockAuthenticatedUser(page);
+
+    await page.route("**/api/watch-lists", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(watchLists),
+      });
+    });
+
+    // Hold the search response open so the loading skeleton stays on screen
+    // long enough to assert on it and capture a screenshot.
+    await page.route("**/api/media/search?**", async (route) => {
+      await new Promise((resolve) => setTimeout(resolve, 4000));
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify([searchResult]),
+      });
+    });
+
+    await page.goto("/search");
+    await page
+      .getByPlaceholder("Buscar películas o series en TMDB...")
+      .fill("Past Lives");
+    await page.getByRole("button", { name: "Buscar" }).click();
+
+    const skeleton = page.getByRole("status", { name: "Cargando resultados" });
+    await expect(skeleton).toBeVisible();
+
+    await page.screenshot({
+      path: "test-results/search-loading.png",
+      fullPage: true,
+    });
+  });
+});

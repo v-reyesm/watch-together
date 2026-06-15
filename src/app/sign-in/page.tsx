@@ -1,19 +1,24 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { GoogleLogin } from "@react-oauth/google";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { hasGoogleClientId } from "@/components/auth/google-provider";
-import { PosterBlock, sampleItems, StatusChip } from "@/components/watch-ui";
+import { PosterBlock, sampleItems, type WatchItem } from "@/components/watch-ui";
 import { useAuth } from "@/lib/auth";
 import { apiFetch } from "@/lib/api";
+import { getTopRatedCovers } from "@/lib/watch-api";
+import { itemFromTopRatedCover } from "@/lib/watch-mappers";
 
 function isInternalPath(path: string | null): path is string {
   return Boolean(path?.startsWith("/") && !path.startsWith("//"));
 }
+
+// Placeholder covers shown until the DB query resolves (or if it returns none).
+const fallbackCovers = sampleItems.slice(0, 3);
 
 export default function SignInPage() {
   const { signIn } = useAuth();
@@ -29,6 +34,18 @@ export default function SignInPage() {
     expired ? "Tu sesión ha expirado. Inicia sesión de nuevo." : null,
   );
   const [loading, setLoading] = useState(false);
+  const [covers, setCovers] = useState<WatchItem[]>(fallbackCovers);
+
+  useEffect(() => {
+    let active = true;
+    getTopRatedCovers(6).then(({ data }) => {
+      if (!active || !Array.isArray(data) || data.length === 0) return;
+      setCovers(data.map(itemFromTopRatedCover));
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   async function handleEmailLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -86,18 +103,14 @@ export default function SignInPage() {
           Una lista compartida para dos: agregar pelis y series, marcar lo
           visto y mantener claro qué fue juntos y qué fue solo.
         </p>
-        <div className="mt-8 flex max-w-sm items-center gap-4 rounded-lg border bg-card p-4">
-          <PosterBlock item={sampleItems[0]} className="w-16" />
-          <div className="min-w-0">
-            <p className="truncate text-sm font-semibold">Past Lives</p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              2023 · Película
-            </p>
-            <div className="mt-3">
-              <StatusChip status="pending" />
-            </div>
-          </div>
+        <div className="mt-8 grid max-w-md grid-cols-3 gap-3">
+          {covers.map((item) => (
+            <PosterBlock key={item.id} item={item} />
+          ))}
         </div>
+        <p className="mt-4 max-w-md text-xs text-muted-foreground">
+          Algunas de las mejor valoradas que ya están en WatchTogether.
+        </p>
       </section>
 
       <div className="flex items-center justify-center">

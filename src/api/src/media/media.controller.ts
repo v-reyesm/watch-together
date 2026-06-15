@@ -10,12 +10,21 @@ import {
 } from '@nestjs/common';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { CurrentUserPayload } from '../auth/decorators/current-user.decorator';
+import { Public } from '../auth/decorators/public.decorator';
 import { MediaService } from './media.service';
 import { MediaSearchType } from '../providers/interfaces/media-provider.interface';
 
 @Controller('media')
 export class MediaController {
   constructor(private readonly mediaService: MediaService) {}
+
+  @Public()
+  @Get('top-rated')
+  topRated(@Query('limit') limit?: string) {
+    const parsed = limit != null ? parseInt(limit, 10) : NaN;
+    const safeLimit = Number.isFinite(parsed) ? parsed : 3;
+    return this.mediaService.getTopRated(safeLimit);
+  }
 
   @Get('search')
   async search(

@@ -220,7 +220,9 @@ test.describe("authenticated UI", () => {
     await expect(
       page.getByPlaceholder("Buscar películas o series en TMDB..."),
     ).toBeVisible();
-    await expect(page.getByText("Sugerencias visuales")).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Resultados" }),
+    ).toBeVisible();
     await expectNoHorizontalOverflow(page);
 
     await page.goto("/config");

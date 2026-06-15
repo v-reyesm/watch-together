@@ -21,6 +21,7 @@ import {
   SortPills,
   type WatchItem,
 } from "@/components/watch-ui";
+import { useListFilters } from "@/lib/use-list-filters";
 import { useAuth } from "@/lib/auth";
 import {
   deleteWatchList,
@@ -69,6 +70,8 @@ export default function ListDetailPage() {
   }, [listId]);
 
   const items = useMemo(() => list?.items.map(itemFromApi) ?? [], [list]);
+  const { tab, setTab, sort, setSort, query, setQuery, counts, visibleItems } =
+    useListFilters(items);
   const members = list?.members.map((member) => member.initials || "?") ?? [];
   const isOwner =
     list != null &&
@@ -406,15 +409,17 @@ export default function ListDetailPage() {
             <SearchIcon className="size-4 shrink-0 text-muted-foreground" />
             <input
               type="search"
-              disabled
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              aria-label="Buscar en esta lista"
               placeholder="Buscar en esta lista..."
               className="h-10 w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
             />
           </div>
-          <SortPills />
+          <SortPills active={sort} onChange={setSort} />
         </section>
 
-        <ListTabs />
+        <ListTabs active={tab} counts={counts} onChange={setTab} />
 
         <InvitePanel
           canManage={canManageInvites}
@@ -423,20 +428,23 @@ export default function ListDetailPage() {
           panelId="invite-panel"
         />
 
-        {items.length ? (
+        {items.length === 0 ? (
+          <div className="rounded-lg border bg-card p-4 text-sm text-muted-foreground">
+            Esta lista aún no tiene títulos. Agrega uno desde búsqueda.
+          </div>
+        ) : visibleItems.length ? (
           <section className="grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5">
-            {items.map((item, index) => (
+            {visibleItems.map((item) => (
               <PosterGridCard
                 key={item.id}
                 item={item}
-                rank={index + 1}
                 onMarkWatched={handleToggleWatched}
               />
             ))}
           </section>
         ) : (
           <div className="rounded-lg border bg-card p-4 text-sm text-muted-foreground">
-            Esta lista aún no tiene títulos. Agrega uno desde búsqueda.
+            Ningún título coincide con estos filtros.
           </div>
         )}
       </div>

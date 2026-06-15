@@ -1,5 +1,20 @@
 import { apiFetch } from "@/lib/api";
 
+type ApiResult<T> = { data: T | null; status: number; error?: string };
+
+/**
+ * Wrap a mutating request so that, on success, it notifies any listener
+ * (e.g. the sidebar) that the user's watch-lists may have changed.
+ */
+function mutate<T>(promise: Promise<ApiResult<T>>): Promise<ApiResult<T>> {
+  return promise.then((res) => {
+    if (res.data && typeof window !== "undefined") {
+      window.dispatchEvent(new Event("watchlists:changed"));
+    }
+    return res;
+  });
+}
+
 export type ApiMediaType = "movie" | "tv";
 export type ApiWatchStatus = "pending" | "watchedTogether" | "watchedAlone";
 
@@ -100,10 +115,12 @@ export type CreateWatchListInput = {
 };
 
 export function createWatchList(input: CreateWatchListInput) {
-  return apiFetch<ApiWatchList>("/api/watch-lists", {
-    method: "POST",
-    body: input,
-  });
+  return mutate(
+    apiFetch<ApiWatchList>("/api/watch-lists", {
+      method: "POST",
+      body: input,
+    }),
+  );
 }
 
 export function getWatchSummary() {
@@ -124,29 +141,36 @@ export type UpdateWatchListInput = {
 };
 
 export function updateWatchList(id: number, input: UpdateWatchListInput) {
-  return apiFetch<ApiWatchList>(`/api/watch-lists/${id}`, {
-    method: "PATCH",
-    body: input,
-  });
+  return mutate(
+    apiFetch<ApiWatchList>(`/api/watch-lists/${id}`, {
+      method: "PATCH",
+      body: input,
+    }),
+  );
 }
 
 export function deleteWatchList(id: number) {
-  return apiFetch<{ ok: boolean }>(`/api/watch-lists/${id}`, {
-    method: "DELETE",
-  });
+  return mutate(
+    apiFetch<{ ok: boolean }>(`/api/watch-lists/${id}`, {
+      method: "DELETE",
+    }),
+  );
 }
 
 export function removeListMember(listId: number, memberId: number) {
-  return apiFetch<ApiWatchList>(
-    `/api/watch-lists/${listId}/members/${memberId}`,
-    { method: "DELETE" },
+  return mutate(
+    apiFetch<ApiWatchList>(`/api/watch-lists/${listId}/members/${memberId}`, {
+      method: "DELETE",
+    }),
   );
 }
 
 export function leaveWatchList(listId: number) {
-  return apiFetch<{ ok: boolean }>(`/api/watch-lists/${listId}/members/me`, {
-    method: "DELETE",
-  });
+  return mutate(
+    apiFetch<{ ok: boolean }>(`/api/watch-lists/${listId}/members/me`, {
+      method: "DELETE",
+    }),
+  );
 }
 
 export function createInvite(listId: number) {
@@ -167,35 +191,45 @@ export function revokeInvite(listId: number, inviteId: number) {
 }
 
 export function joinInvite(token: string) {
-  return apiFetch<ApiJoinInviteResult>(`/api/invites/${token}/join`, {
-    method: "POST",
-  });
+  return mutate(
+    apiFetch<ApiJoinInviteResult>(`/api/invites/${token}/join`, {
+      method: "POST",
+    }),
+  );
 }
 
 export function addListItem(listId: number, item: AddListItemInput) {
-  return apiFetch<ApiWatchList>(`/api/watch-lists/${listId}/items`, {
-    method: "POST",
-    body: { providerName: "tmdb", ...item },
-  });
+  return mutate(
+    apiFetch<ApiWatchList>(`/api/watch-lists/${listId}/items`, {
+      method: "POST",
+      body: { providerName: "tmdb", ...item },
+    }),
+  );
 }
 
 export function removeListItem(listId: number, itemId: number) {
-  return apiFetch<ApiWatchList>(`/api/watch-lists/${listId}/items/${itemId}`, {
-    method: "DELETE",
-  });
+  return mutate(
+    apiFetch<ApiWatchList>(`/api/watch-lists/${listId}/items/${itemId}`, {
+      method: "DELETE",
+    }),
+  );
 }
 
 export function markListItemWatched(listId: number, itemId: number) {
-  return apiFetch<ApiWatchList>(
-    `/api/watch-lists/${listId}/items/${itemId}/watch-events`,
-    { method: "POST" },
+  return mutate(
+    apiFetch<ApiWatchList>(
+      `/api/watch-lists/${listId}/items/${itemId}/watch-events`,
+      { method: "POST" },
+    ),
   );
 }
 
 export function undoLatestWatch(listId: number, itemId: number) {
-  return apiFetch<ApiWatchList>(
-    `/api/watch-lists/${listId}/items/${itemId}/watch-events/latest`,
-    { method: "DELETE" },
+  return mutate(
+    apiFetch<ApiWatchList>(
+      `/api/watch-lists/${listId}/items/${itemId}/watch-events/latest`,
+      { method: "DELETE" },
+    ),
   );
 }
 

@@ -30,7 +30,7 @@ async function expectProfilePage(page: Page, user: UserProfile = authUser) {
   await expect(page).toHaveURL("/profile");
   await expect(page.getByRole("heading", { name: "Perfil" })).toBeVisible();
   await expect(page.getByText("Tu cuenta y preferencias")).toBeVisible();
-  await expect(page.getByText(user.email)).toBeVisible();
+  await expect(page.getByRole("main").getByText(user.email)).toBeVisible();
   await expect(page.getByLabel("Nombre para mostrar")).toHaveValue(user.name);
   await expect(
     page.getByRole("button", { name: /Cerrar sesión/ }),

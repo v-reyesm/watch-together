@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   LinkIcon,
   PlusIcon,
@@ -18,6 +18,7 @@ import {
   PosterGridCard,
   SortPills,
 } from "@/components/watch-ui";
+import { useListFilters } from "@/lib/use-list-filters";
 import {
   getWatchList,
   getWatchLists,
@@ -31,6 +32,7 @@ import { itemFromApi } from "@/lib/watch-mappers";
 
 export default function ListsPage() {
   const { user } = useAuth();
+  const router = useRouter();
   const searchParams = useSearchParams();
   const selectedId = Number(searchParams.get("list"));
   const [lists, setLists] = useState<ApiWatchList[]>([]);
@@ -67,6 +69,8 @@ export default function ListsPage() {
     () => currentList?.items.map(itemFromApi) ?? [],
     [currentList],
   );
+  const { tab, setTab, sort, setSort, query, setQuery, counts, visibleItems } =
+    useListFilters(items);
 
   async function handleMarkWatched(itemId: number | undefined) {
     if (!currentList || !itemId) return;
@@ -179,13 +183,23 @@ export default function ListsPage() {
         ) : null}
 
         {lists.length > 1 ? (
-          <div className="flex flex-wrap gap-2">
-            {lists.map((list) => (
-              <Button key={list.id} variant="outline" size="sm" asChild>
-                <Link href={`/lists?list=${list.id}`}>{list.name}</Link>
-              </Button>
-            ))}
-          </div>
+          <label className="flex items-center gap-2 text-sm text-muted-foreground md:hidden">
+            <span className="shrink-0">Lista</span>
+            <select
+              aria-label="Cambiar de lista"
+              value={currentList?.id ?? ""}
+              onChange={(event) =>
+                router.push(`/lists?list=${event.target.value}`)
+              }
+              className="min-h-9 w-full rounded-md border bg-background px-3 py-1.5 text-sm font-medium text-foreground outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30"
+            >
+              {lists.map((list) => (
+                <option key={list.id} value={list.id}>
+                  {list.name}
+                </option>
+              ))}
+            </select>
+          </label>
         ) : null}
 
         <section className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
@@ -193,15 +207,17 @@ export default function ListsPage() {
             <SearchIcon className="size-4 shrink-0 text-muted-foreground" />
             <input
               type="search"
-              disabled
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              aria-label="Buscar en esta lista"
               placeholder="Buscar en esta lista..."
               className="h-10 w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
             />
           </div>
-          <SortPills />
+          <SortPills active={sort} onChange={setSort} />
         </section>
 
-        <ListTabs />
+        <ListTabs active={tab} counts={counts} onChange={setTab} />
 
         {currentList ? (
           <InvitePanel
@@ -212,37 +228,46 @@ export default function ListsPage() {
           />
         ) : null}
 
-        <section className="grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5">
-          {items.map((item, index) => (
-            <div key={item.id} className="flex min-w-0 flex-col gap-2">
-              <PosterGridCard
-                item={item}
-                rank={index + 1}
-                onMarkWatched={() => handleMarkWatched(item.numericId)}
-              />
-              <div className="flex flex-wrap gap-1.5">
-                {item.status !== "pending" ? (
+        {items.length === 0 ? (
+          <div className="rounded-lg border bg-card p-4 text-sm text-muted-foreground">
+            Esta lista aún no tiene títulos. Agrega uno desde búsqueda.
+          </div>
+        ) : visibleItems.length === 0 ? (
+          <div className="rounded-lg border bg-card p-4 text-sm text-muted-foreground">
+            Ningún título coincide con estos filtros.
+          </div>
+        ) : (
+          <section className="grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5">
+            {visibleItems.map((item) => (
+              <div key={item.id} className="flex min-w-0 flex-col gap-2">
+                <PosterGridCard
+                  item={item}
+                  onMarkWatched={() => handleMarkWatched(item.numericId)}
+                />
+                <div className="flex flex-wrap gap-1.5">
+                  {item.status !== "pending" ? (
+                    <Button
+                      variant="outline"
+                      size="xs"
+                      onClick={() => handleUndoWatch(item.numericId)}
+                    >
+                      <RotateCcwIcon className="size-3" />
+                      Deshacer
+                    </Button>
+                  ) : null}
                   <Button
-                    variant="outline"
+                    variant="ghost"
                     size="xs"
-                    onClick={() => handleUndoWatch(item.numericId)}
+                    onClick={() => handleRemoveItem(item.numericId, item.title)}
                   >
-                    <RotateCcwIcon className="size-3" />
-                    Deshacer
+                    <Trash2Icon className="size-3" />
+                    Quitar
                   </Button>
-                ) : null}
-                <Button
-                  variant="ghost"
-                  size="xs"
-                  onClick={() => handleRemoveItem(item.numericId, item.title)}
-                >
-                  <Trash2Icon className="size-3" />
-                  Quitar
-                </Button>
+                </div>
               </div>
-            </div>
-          ))}
-        </section>
+            ))}
+          </section>
+        )}
       </div>
     </div>
   );

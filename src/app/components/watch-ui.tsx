@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { PosterImage } from "@/components/poster-image";
 
 export type Poster = {
   bg: string;
@@ -33,8 +34,10 @@ export type WatchItem = {
   type: "pelicula" | "serie";
   meta: string;
   genre: string;
+  rating?: number;
   status: "pending" | "watchedTogether" | "watchedAlone";
   poster: Poster;
+  posterUrl?: string;
   votes: {
     me: VoteValue;
     partner: VoteValue;
@@ -245,6 +248,9 @@ export function PosterBlock({
       <div className="absolute bottom-3 left-3 right-3 text-balance text-base font-semibold leading-none tracking-tight">
         {item.title}
       </div>
+      {item.posterUrl ? (
+        <PosterImage key={item.posterUrl} src={item.posterUrl} alt="" />
+      ) : null}
     </div>
   );
 }
@@ -340,20 +346,45 @@ export function WatchListCard({ list }: { list: WatchList }) {
 export function WatchItemRow({
   item,
   onMarkWatched,
+  onOpen,
+  actions,
 }: {
   item: WatchItem;
   onMarkWatched?: (item: WatchItem) => void;
+  onOpen?: () => void;
+  actions?: React.ReactNode;
 }) {
   const TypeIcon = item.type === "serie" ? TvIcon : FilmIcon;
 
   return (
     <div className="grid grid-cols-[72px_1fr] gap-4 rounded-lg border bg-card p-3">
-      <PosterBlock item={item} />
+      {onOpen ? (
+        <button
+          type="button"
+          onClick={onOpen}
+          aria-label={`Ver detalle de ${item.title}`}
+          className="block rounded-[4px] transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
+        >
+          <PosterBlock item={item} />
+        </button>
+      ) : (
+        <PosterBlock item={item} />
+      )}
       <div className="min-w-0 py-1">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <h3 className="truncate font-semibold tracking-tight">
-              {item.title}
+              {onOpen ? (
+                <button
+                  type="button"
+                  onClick={onOpen}
+                  className="text-left hover:underline focus-visible:underline focus-visible:outline-none"
+                >
+                  {item.title}
+                </button>
+              ) : (
+                item.title
+              )}
             </h3>
             <p className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
               <TypeIcon className="size-3.5" />
@@ -363,205 +394,162 @@ export function WatchItemRow({
           <StatusChip status={item.status} />
         </div>
         <div className="mt-4 flex flex-wrap gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-8 rounded-full"
-            onClick={() => onMarkWatched?.(item)}
-            disabled={!onMarkWatched}
-          >
-            <CheckIcon className="size-3.5" />
-            Marcar vista
-          </Button>
-          <Button variant="ghost" size="icon-sm" aria-label="Compartir">
-            <LinkIcon className="size-4" />
-          </Button>
+          {actions ?? (
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 rounded-full"
+                onClick={() => onMarkWatched?.(item)}
+                disabled={!onMarkWatched}
+              >
+                <CheckIcon className="size-3.5" />
+                Marcar vista
+              </Button>
+              <Button variant="ghost" size="icon-sm" aria-label="Compartir">
+                <LinkIcon className="size-4" />
+              </Button>
+            </>
+          )}
         </div>
       </div>
     </div>
   );
 }
 
-const ratingMeta = {
-  muchas: { label: "Quiero verla", short: "Quiero", glyph: "***", value: 3 },
-  late: { label: "Me interesa", short: "Interesa", glyph: "**", value: 2 },
-  igual: { label: "Puede ser", short: "Quizas", glyph: ".", value: 1 },
-  paso: { label: "No me interesa", short: "No", glyph: "x", value: 0 },
-} as const;
+export type ListSortKey = "title" | "rating" | "year";
+export type ListTabKey = "all" | "pending" | "watched";
 
-function ratingValue(value: VoteValue) {
-  return value ? ratingMeta[value].value : null;
-}
+const sortOptions: { key: ListSortKey; label: string }[] = [
+  { key: "title", label: "Titulo" },
+  { key: "rating", label: "Mejor valoradas" },
+  { key: "year", label: "Mas recientes" },
+];
 
-function scoreMatch(votes: WatchItem["votes"]) {
-  const mine = ratingValue(votes.me);
-  const partner = ratingValue(votes.partner);
-
-  if (mine == null && partner == null) {
-    return { label: "Sin votos", score: 0, complete: false };
-  }
-
-  if (mine == null || partner == null) {
-    return {
-      label: "Esperando voto",
-      score: mine ?? partner ?? 0,
-      complete: false,
-    };
-  }
-
-  const score = mine + partner;
-  if (mine === 0 || partner === 0) {
-    return { label: "Baja prioridad", score, complete: true };
-  }
-  if (score >= 6) {
-    return { label: "Match alto", score, complete: true };
-  }
-  if (score >= 4) {
-    return { label: "Buen candidato", score, complete: true };
-  }
-  if (score >= 2) {
-    return { label: "Puede ser", score, complete: true };
-  }
-  return { label: "Solo a uno le gusta", score, complete: true };
-}
-
-export function MatchBadge({ item }: { item: WatchItem }) {
-  const match = scoreMatch(item.votes);
-  const strong = match.label === "Match alto";
-  const good = match.label === "Buen candidato";
-
-  return (
-    <span
-      className={cn(
-        "inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-[0.68rem] font-medium leading-none",
-        strong
-          ? "bg-primary text-primary-foreground"
-          : good
-            ? "bg-accent text-accent-foreground"
-            : "border text-muted-foreground",
-      )}
-    >
-      <span
-        className={cn(
-          "size-1.5 rounded-full",
-          strong
-            ? "bg-primary-foreground"
-            : good
-              ? "bg-accent-foreground"
-              : "bg-muted-foreground",
-        )}
-      />
-      {match.label}
-      {match.complete ? (
-        <span className="font-mono opacity-70">{match.score}</span>
-      ) : null}
-    </span>
-  );
-}
-
-export function MiniVote({
-  value,
-  person,
-  secondary,
+export function SortPills({
+  active,
+  onChange,
 }: {
-  value: VoteValue;
-  person: string;
-  secondary?: boolean;
+  active: ListSortKey;
+  onChange: (sort: ListSortKey) => void;
 }) {
-  const meta = value ? ratingMeta[value] : null;
-
   return (
-    <span className="inline-flex min-w-0 items-center gap-1.5 rounded-full border bg-background px-2 py-1 text-[0.68rem] text-foreground">
-      <span
-        className="flex size-4 shrink-0 items-center justify-center rounded-full text-[0.55rem] font-semibold text-white"
-        style={{ backgroundColor: secondary ? "#3a8d9a" : "#1e4a44" }}
-      >
-        {person}
-      </span>
-      {meta ? (
-        <span className="truncate">
-          <span className="font-mono tracking-[0.06em]">{meta.glyph}</span>{" "}
-          {meta.short}
-        </span>
-      ) : (
-        <span className="truncate italic text-muted-foreground">sin voto</span>
-      )}
-    </span>
-  );
-}
-
-export function SortPills() {
-  const options = ["Mejor match", "Recientes", "Mi interes"];
-
-  return (
-    <div className="flex flex-wrap gap-1">
-      {options.map((option, index) => (
-        <button
-          key={option}
-          type="button"
-          disabled
-          className={cn(
-            "rounded-full px-3 py-1.5 font-mono text-[0.68rem] tracking-[0.04em] transition-colors",
-            index === 0
-              ? "bg-accent text-accent-foreground"
-              : "text-muted-foreground hover:bg-accent/50",
-          )}
-        >
-          {option}
-        </button>
-      ))}
+    <div className="flex flex-wrap gap-1" role="group" aria-label="Ordenar">
+      {sortOptions.map((option) => {
+        const isActive = option.key === active;
+        return (
+          <button
+            key={option.key}
+            type="button"
+            aria-pressed={isActive}
+            onClick={() => onChange(option.key)}
+            className={cn(
+              "rounded-full px-3 py-1.5 font-mono text-[0.68rem] tracking-[0.04em] transition-colors",
+              isActive
+                ? "bg-accent text-accent-foreground"
+                : "text-muted-foreground hover:bg-accent/50",
+            )}
+          >
+            {option.label}
+          </button>
+        );
+      })}
     </div>
   );
 }
 
-export function ListTabs() {
+export function ListTabs({
+  active,
+  counts,
+  onChange,
+}: {
+  active: ListTabKey;
+  counts: { all: number; pending: number; watched: number };
+  onChange: (tab: ListTabKey) => void;
+}) {
+  const tabs: { key: ListTabKey; label: string; count: number }[] = [
+    { key: "all", label: "Todos", count: counts.all },
+    { key: "pending", label: "Pendientes", count: counts.pending },
+    { key: "watched", label: "Vistas", count: counts.watched },
+  ];
+
   return (
-    <div className="flex gap-5 border-b">
-      {[
-        ["Pendientes", "3"],
-        ["Mejor match", ""],
-        ["Vistas", "2"],
-      ].map(([label, count], index) => (
-        <button
-          key={label}
-          type="button"
-          disabled
-          className={cn(
-            "relative pb-3 text-sm font-medium",
-            index === 0 ? "text-foreground" : "text-muted-foreground",
-          )}
-        >
-          {label}
-          {count ? (
+    <div className="flex gap-5 border-b" role="tablist" aria-label="Filtrar">
+      {tabs.map((tab) => {
+        const isActive = tab.key === active;
+        return (
+          <button
+            key={tab.key}
+            type="button"
+            role="tab"
+            aria-selected={isActive}
+            onClick={() => onChange(tab.key)}
+            className={cn(
+              "relative pb-3 text-sm font-medium transition-colors",
+              isActive
+                ? "text-foreground"
+                : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            {tab.label}
             <span className="ml-1.5 font-mono text-xs text-muted-foreground">
-              {count}
+              {tab.count}
             </span>
-          ) : null}
-          {index === 0 ? (
-            <span className="absolute inset-x-0 -bottom-px h-0.5 rounded-full bg-foreground" />
-          ) : null}
-        </button>
-      ))}
+            {isActive ? (
+              <span className="absolute inset-x-0 -bottom-px h-0.5 rounded-full bg-foreground" />
+            ) : null}
+          </button>
+        );
+      })}
     </div>
   );
+}
+
+export function filterAndSortItems(
+  items: WatchItem[],
+  {
+    tab,
+    query,
+    sort,
+  }: { tab: ListTabKey; query: string; sort: ListSortKey },
+): WatchItem[] {
+  const normalized = query.trim().toLowerCase();
+
+  const filtered = items.filter((item) => {
+    if (tab === "pending" && item.status !== "pending") return false;
+    if (tab === "watched" && item.status === "pending") return false;
+    if (normalized && !item.title.toLowerCase().includes(normalized)) {
+      return false;
+    }
+    return true;
+  });
+
+  return [...filtered].sort((a, b) => {
+    if (sort === "title") return a.title.localeCompare(b.title);
+    if (sort === "rating") return (b.rating ?? 0) - (a.rating ?? 0);
+    return (b.year ?? 0) - (a.year ?? 0);
+  });
 }
 
 export function PosterGridCard({
   item,
   rank,
   onMarkWatched,
+  onSelect,
 }: {
   item: WatchItem;
   rank?: number;
   onMarkWatched?: (item: WatchItem) => void;
+  onSelect?: (item: WatchItem) => void;
 }) {
   const watched = item.status !== "pending";
+  const handleClick = onSelect ?? onMarkWatched;
 
   return (
     <button
       type="button"
-      onClick={() => onMarkWatched?.(item)}
-      disabled={!onMarkWatched}
+      onClick={() => handleClick?.(item)}
+      disabled={!handleClick}
       className="group flex min-w-0 flex-col gap-2 text-left"
     >
       <span className="relative block">
@@ -584,17 +572,11 @@ export function PosterGridCard({
           {item.genre}
         </span>
       </span>
-      <span className="flex flex-wrap gap-1.5">
-        {watched ? (
+      {watched ? (
+        <span className="flex flex-wrap gap-1.5">
           <StatusChip status={item.status} />
-        ) : (
-          <MatchBadge item={item} />
-        )}
-      </span>
-      <span className="flex flex-wrap gap-1.5">
-        <MiniVote value={item.votes.me} person="T" />
-        <MiniVote value={item.votes.partner} person="A" secondary />
-      </span>
+        </span>
+      ) : null}
     </button>
   );
 }

@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { usePathname } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
+import { usePathname, useSearchParams } from "next/navigation";
 import {
   HomeIcon,
   ListIcon,
@@ -15,6 +15,9 @@ import {
 import { cn } from "@/lib/utils";
 import { getWatchLists } from "@/lib/watch-api";
 import type { ApiWatchList } from "@/lib/watch-api";
+import { useAuth } from "@/lib/auth";
+
+const listDotColors = ["#e88aa6", "#a98ad0", "#3a8d9a", "#d9a05a"];
 
 const navItems = [
   { href: "/", label: "Inicio", icon: HomeIcon },
@@ -58,11 +61,37 @@ function NavLinks() {
 
 function SidebarContent() {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const { user } = useAuth();
   const [lists, setLists] = useState<ApiWatchList[]>([]);
 
   useEffect(() => {
-    getWatchLists().then(({ data }) => setLists(data ?? []));
-  }, []);
+    let cancelled = false;
+    function load() {
+      getWatchLists().then(({ data }) => {
+        if (!cancelled) setLists(data ?? []);
+      });
+    }
+    load();
+    // Refrescar cuando otra parte de la app cambia las listas o al volver al tab.
+    window.addEventListener("watchlists:changed", load);
+    window.addEventListener("focus", load);
+    return () => {
+      cancelled = true;
+      window.removeEventListener("watchlists:changed", load);
+      window.removeEventListener("focus", load);
+    };
+  }, [pathname]);
+
+  const listParam = Number(searchParams.get("list"));
+  const pathMatch = /^\/lists\/(\d+)/.exec(pathname);
+  const activeListId = pathMatch
+    ? Number(pathMatch[1])
+    : Number.isFinite(listParam) && listParam > 0
+      ? listParam
+      : pathname.startsWith("/lists")
+        ? lists[0]?.id
+        : undefined;
 
   return (
     <>
@@ -88,14 +117,20 @@ function SidebarContent() {
             Mis listas
           </p>
           <div className="flex flex-col gap-0.5">
+            {lists.length === 0 ? (
+              <p className="px-2.5 py-1 text-xs text-sidebar-foreground/45">
+                Todavía no tienes listas.
+              </p>
+            ) : null}
             {lists.map((list, index) => {
-              const active = pathname.startsWith("/lists") && index === 0;
+              const active = list.id === activeListId;
               const pending = list.pendingCount;
 
               return (
                 <Link
                   key={list.id}
                   href={`/lists?list=${list.id}`}
+                  aria-current={active ? "page" : undefined}
                   className={cn(
                     "flex items-center justify-between gap-2 rounded-md px-2.5 py-2 text-sm transition-colors",
                     active
@@ -107,9 +142,8 @@ function SidebarContent() {
                     <span
                       className="size-2 shrink-0 rounded-full"
                       style={{
-                        backgroundColor: ["#e88aa6", "#a98ad0", "#3a8d9a"][
-                          index % 3
-                        ],
+                        backgroundColor:
+                          listDotColors[index % listDotColors.length],
                       }}
                     />
                     <span className="truncate">{list.name}</span>
@@ -162,14 +196,14 @@ function SidebarContent() {
       <div className="mt-auto border-t border-sidebar-border px-4 py-3">
         <div className="flex items-center gap-2">
           <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
-            T
+            {(user?.name ?? user?.email ?? "?").charAt(0).toUpperCase()}
           </span>
           <div className="min-w-0 flex-1">
             <div className="truncate text-sm font-medium text-sidebar-foreground">
-              Tu
+              {user?.name ?? "Invitado"}
             </div>
             <div className="truncate text-[0.68rem] text-sidebar-foreground/45">
-              tu@email.com
+              {user?.email ?? ""}
             </div>
           </div>
           <Link
@@ -188,7 +222,9 @@ function SidebarContent() {
 export function AppSidebar() {
   return (
     <aside className="hidden w-[252px] shrink-0 flex-col border-r border-sidebar-border bg-sidebar md:flex">
-      <SidebarContent />
+      <Suspense fallback={null}>
+        <SidebarContent />
+      </Suspense>
     </aside>
   );
 }

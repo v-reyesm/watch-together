@@ -31,8 +31,10 @@ export function itemFromApi(item: ApiWatchItem, index = 0): WatchItem {
       .filter(Boolean)
       .join(" · "),
     genre: item.mediaType === "tv" ? "Serie" : "Película",
+    rating: item.rating ?? 0,
     status: item.status,
     poster: posterPalette[index % posterPalette.length],
+    posterUrl: item.posterUrl || undefined,
     votes: { me: null, partner: null },
   };
 }
@@ -67,8 +69,10 @@ export function itemFromSearchResult(
       .filter(Boolean)
       .join(" · "),
     genre: item.mediaType === "tv" ? "Serie" : "Película",
+    rating: item.rating ?? 0,
     status: "pending",
     poster: posterPalette[index % posterPalette.length],
+    posterUrl: item.posterUrl || undefined,
     votes: { me: null, partner: null },
   };
 }

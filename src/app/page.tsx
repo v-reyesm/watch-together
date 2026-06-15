@@ -63,15 +63,15 @@ export default function Home() {
   // the summary reloads or the user hits "Cambiar".
   const suggestions = useMemo(() => {
     if (!summary) return [];
-    const pending = summary.lists.flatMap((list) =>
-      list.items
-        .filter((item) => item.status === "pending")
-        .map((item, index) => ({
-          key: `${list.id}-${item.id}`,
-          item: itemFromApi(item, index),
-          listName: list.name,
-          listId: list.id,
-        })),
+    // Source from the full pending set (every list, no 4-item preview cap) so
+    // titles deep in a list can still surface here.
+    const pending = (summary.pendingSuggestions ?? []).map(
+      (suggestion, index) => ({
+        key: `${suggestion.listId}-${suggestion.id}`,
+        item: itemFromApi(suggestion, index),
+        listName: suggestion.listName,
+        listId: suggestion.listId,
+      }),
     );
 
     for (let i = pending.length - 1; i > 0; i -= 1) {

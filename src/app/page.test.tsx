@@ -80,6 +80,27 @@ const summary = {
       watchedAt: null,
     },
   ],
+  pendingSuggestions: [
+    {
+      id: 10,
+      providerName: "tmdb",
+      providerId: 100,
+      mediaType: "movie" as const,
+      title: "Pendiente",
+      translatedTitle: "Pendiente",
+      year: 2026,
+      posterUrl: "",
+      summary: "",
+      overview: "",
+      genres: [],
+      originalLanguage: "es",
+      rating: 0,
+      status: "pending" as const,
+      watchedAt: null,
+      listId: 5,
+      listName: "Noches de viernes",
+    },
+  ],
 };
 
 describe("Home", () => {

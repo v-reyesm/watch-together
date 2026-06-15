@@ -133,11 +133,13 @@ test.describe("search and add", () => {
       page.getByText("Vidas pasadas", { exact: true }).first(),
     ).toBeVisible();
 
-    await page.getByLabel("Agregar a la lista").selectOption("8");
-    await page.getByRole("button", { name: "Agregar a lista" }).click();
+    // "Noches de viernes" (id 5) is the default target, so open the per-item
+    // list picker and explicitly choose "Series cortas" (id 8) to add there.
+    await page.getByRole("button", { name: "Elegir otra lista" }).click();
+    await page.getByRole("menuitem", { name: "Series cortas" }).click();
 
     await expect(page.getByRole("status")).toContainText(
-      "Título agregado a la lista.",
+      "Vidas pasadas agregada a Series cortas.",
     );
   });
 });

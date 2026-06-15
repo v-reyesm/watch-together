@@ -14,6 +14,7 @@ import {
 
 jest.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams("list=5"),
+  useRouter: () => ({ push: jest.fn(), replace: jest.fn() }),
 }));
 
 jest.mock("@/lib/auth", () => ({

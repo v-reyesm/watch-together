@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   LinkIcon,
   PlusIcon,
@@ -32,6 +32,7 @@ import { itemFromApi } from "@/lib/watch-mappers";
 
 export default function ListsPage() {
   const { user } = useAuth();
+  const router = useRouter();
   const searchParams = useSearchParams();
   const selectedId = Number(searchParams.get("list"));
   const [lists, setLists] = useState<ApiWatchList[]>([]);
@@ -182,13 +183,23 @@ export default function ListsPage() {
         ) : null}
 
         {lists.length > 1 ? (
-          <div className="flex flex-wrap gap-2">
-            {lists.map((list) => (
-              <Button key={list.id} variant="outline" size="sm" asChild>
-                <Link href={`/lists?list=${list.id}`}>{list.name}</Link>
-              </Button>
-            ))}
-          </div>
+          <label className="flex items-center gap-2 text-sm text-muted-foreground md:hidden">
+            <span className="shrink-0">Lista</span>
+            <select
+              aria-label="Cambiar de lista"
+              value={currentList?.id ?? ""}
+              onChange={(event) =>
+                router.push(`/lists?list=${event.target.value}`)
+              }
+              className="min-h-9 w-full rounded-md border bg-background px-3 py-1.5 text-sm font-medium text-foreground outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30"
+            >
+              {lists.map((list) => (
+                <option key={list.id} value={list.id}>
+                  {list.name}
+                </option>
+              ))}
+            </select>
+          </label>
         ) : null}
 
         <section className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">

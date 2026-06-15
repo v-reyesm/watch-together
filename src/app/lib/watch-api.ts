@@ -55,6 +55,11 @@ export type ApiWatchList = {
   items: ApiWatchItem[];
 };
 
+export type ApiWatchSuggestion = ApiWatchItem & {
+  listId: number;
+  listName: string;
+};
+
 export type ApiWatchSummary = {
   listCount: number;
   itemCount: number;
@@ -62,6 +67,7 @@ export type ApiWatchSummary = {
   pendingCount: number;
   lists: ApiWatchList[];
   highlightedItems: ApiWatchItem[];
+  pendingSuggestions: ApiWatchSuggestion[];
 };
 
 export type ApiInviteStatus = "active" | "expired" | "revoked" | "used";

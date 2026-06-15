@@ -53,7 +53,7 @@ export default function SearchPage() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
-  const [view, setView] = useState<ViewMode>("list");
+  const [view, setView] = useState<ViewMode>("grid");
   const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
   const [minRating, setMinRating] = useState(0);
   const [sort, setSort] = useState<SortMode>("relevance");

@@ -3,20 +3,22 @@
 import { useEffect, useState } from "react";
 import { Dialog } from "radix-ui";
 import {
-  CheckIcon,
   FilmIcon,
   MonitorPlayIcon,
-  PlusIcon,
   StarIcon,
   TvIcon,
   UsersIcon,
   VideoIcon,
   XIcon,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { AddToListButton } from "@/components/add-to-list-button";
 import { PosterImage } from "@/components/poster-image";
 import { getMediaDetails } from "@/lib/watch-api";
-import type { ApiMediaDetails, ApiSearchResult } from "@/lib/watch-api";
+import type {
+  ApiMediaDetails,
+  ApiSearchResult,
+  ApiWatchList,
+} from "@/lib/watch-api";
 
 function resultYear(result: ApiSearchResult): number | null {
   if (!result.releaseDate) return null;
@@ -28,16 +30,20 @@ export function MediaDetailModal({
   result,
   onClose,
   onAdd,
-  addToLabel,
-  added,
+  lists,
+  defaultListId,
+  isAdded,
 }: {
   result: ApiSearchResult | null;
   onClose: () => void;
-  onAdd: (result: ApiSearchResult) => void;
-  /** Name of the list the title will be added to, if any. */
-  addToLabel?: string | null;
-  /** True once this title has been added in the current session. */
-  added?: boolean;
+  /** Adds `result` to the chosen list (or surfaces guidance when `null`). */
+  onAdd: (result: ApiSearchResult, listId: number | null) => void;
+  /** All of the user's lists, offered as targets in the picker. */
+  lists: ApiWatchList[];
+  /** Remembered default target for the primary one-click add. */
+  defaultListId: number | null;
+  /** Whether this title was already added to a given list this session. */
+  isAdded: (listId: number) => boolean;
 }) {
   const [details, setDetails] = useState<ApiMediaDetails | null>(null);
   const [detailsLoading, setDetailsLoading] = useState(false);
@@ -146,22 +152,13 @@ export function MediaDetailModal({
               {/* Body */}
               <div className="flex flex-col gap-5 p-5 sm:p-6">
                 <div className="flex flex-wrap items-center gap-2">
-                  <Button
-                    className="rounded-full"
-                    onClick={() => onAdd(result)}
-                    disabled={added}
-                  >
-                    {added ? (
-                      <CheckIcon className="size-4" />
-                    ) : (
-                      <PlusIcon className="size-4" />
-                    )}
-                    {added
-                      ? "Agregada"
-                      : addToLabel
-                        ? `Agregar a ${addToLabel}`
-                        : "Agregar a lista"}
-                  </Button>
+                  <AddToListButton
+                    className="w-auto"
+                    lists={lists}
+                    defaultListId={defaultListId}
+                    isAdded={isAdded}
+                    onAdd={(listId) => onAdd(result, listId)}
+                  />
                 </div>
 
                 {result.overview ? (

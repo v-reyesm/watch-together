@@ -1,15 +1,25 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
-  MetricTile,
+  MetricStrip,
   PageIntro,
+  SuggestionCard,
   WatchItemRow,
   WatchListCard,
 } from "@/components/watch-ui";
-import { CopyIcon, EyeIcon, LinkIcon, ListIcon, MailIcon, PlusIcon } from "lucide-react";
+import {
+  CopyIcon,
+  EyeIcon,
+  LinkIcon,
+  ListIcon,
+  MailIcon,
+  PlusIcon,
+  ShuffleIcon,
+  SparklesIcon,
+} from "lucide-react";
 import { createInvite, getWatchSummary, markListItemWatched } from "@/lib/watch-api";
 import type { ApiWatchSummary } from "@/lib/watch-api";
 import { useAuth } from "@/lib/auth";
@@ -28,6 +38,10 @@ export default function Home() {
   const [inviteMessage, setInviteMessage] = useState<string | null>(null);
   const [inviteUrl, setInviteUrl] = useState<string | null>(null);
   const [creatingInvite, setCreatingInvite] = useState(false);
+  const [shuffleSeed, setShuffleSeed] = useState(0);
+
+  const firstName = user?.name?.trim().split(/\s+/)[0];
+  const greeting = firstName ? `Hola, ${firstName}` : "Hola";
 
   async function loadSummary() {
     setLoading(true);
@@ -43,6 +57,32 @@ export default function Home() {
 
   const lists = summary?.lists.map(listFromApi) ?? [];
   const highlightedItems = summary?.highlightedItems.map(itemFromApi) ?? [];
+
+  // Random "to watch" suggestions drawn from every pending item across all the
+  // user's lists, each tagged with the list it belongs to. Reshuffled whenever
+  // the summary reloads or the user hits "Cambiar".
+  const suggestions = useMemo(() => {
+    if (!summary) return [];
+    const pending = summary.lists.flatMap((list) =>
+      list.items
+        .filter((item) => item.status === "pending")
+        .map((item, index) => ({
+          key: `${list.id}-${item.id}`,
+          item: itemFromApi(item, index),
+          listName: list.name,
+          listId: list.id,
+        })),
+    );
+
+    for (let i = pending.length - 1; i > 0; i -= 1) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [pending[i], pending[j]] = [pending[j], pending[i]];
+    }
+
+    return pending.slice(0, 4);
+    // shuffleSeed intentionally re-triggers the randomized selection.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [summary, shuffleSeed]);
   const ownerList =
     user == null
       ? null
@@ -102,7 +142,7 @@ export default function Home() {
   return (
     <div className="container flex max-w-6xl flex-col gap-8 py-6 md:py-10">
       <PageIntro
-        eyebrow="Hola, tú"
+        eyebrow={greeting}
         title="Mis listas"
         description="Una vista tranquila para decidir qué ver juntos, revisar pendientes y distinguir lo visto solo de lo visto en pareja."
         action={
@@ -121,24 +161,24 @@ export default function Home() {
         </div>
       ) : null}
 
-      <section className="grid gap-3 sm:grid-cols-2">
-        <MetricTile
-          label="Listas"
-          value={loading ? "..." : String(summary?.listCount ?? 0)}
-          detail="listas compartidas"
-          icon={ListIcon}
-        />
-        <MetricTile
-          label="Vistas"
-          value={
-            loading
+      <MetricStrip
+        stats={[
+          {
+            label: "Listas",
+            value: loading ? "..." : String(summary?.listCount ?? 0),
+            detail: "compartidas",
+            icon: ListIcon,
+          },
+          {
+            label: "Vistas",
+            value: loading
               ? "..."
-              : `${summary?.watchedCount ?? 0}/${summary?.itemCount ?? 0}`
-          }
-          detail="títulos completados"
-          icon={EyeIcon}
-        />
-      </section>
+              : `${summary?.watchedCount ?? 0}/${summary?.itemCount ?? 0}`,
+            detail: "completadas",
+            icon: EyeIcon,
+          },
+        ]}
+      />
 
       <section className="flex flex-col gap-3 rounded-lg border border-dashed bg-card p-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
@@ -257,6 +297,45 @@ export default function Home() {
           ) : null}
         </div>
       </section>
+
+      {!loading && suggestions.length > 0 ? (
+        <section className="flex flex-col gap-3">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <span className="flex size-8 items-center justify-center rounded-full bg-accent text-accent-foreground">
+                <SparklesIcon className="size-4" />
+              </span>
+              <div>
+                <h2 className="text-lg font-semibold tracking-tight">
+                  Para ver
+                </h2>
+                <p className="text-xs text-muted-foreground">
+                  Una selección al azar de tus pendientes en todas las listas.
+                </p>
+              </div>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="rounded-full"
+              onClick={() => setShuffleSeed((seed) => seed + 1)}
+            >
+              <ShuffleIcon className="size-4" />
+              Cambiar
+            </Button>
+          </div>
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+            {suggestions.map((suggestion) => (
+              <SuggestionCard
+                key={suggestion.key}
+                item={suggestion.item}
+                listName={suggestion.listName}
+                href={`/lists/${suggestion.listId}`}
+              />
+            ))}
+          </div>
+        </section>
+      ) : null}
     </div>
   );
 }

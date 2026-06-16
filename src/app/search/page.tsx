@@ -164,9 +164,9 @@ export default function SearchPage() {
   return (
     <div className="container flex max-w-4xl flex-col gap-8 py-6 md:py-10">
       <PageIntro
-        eyebrow="TMDB primero"
+        eyebrow="Catálogo"
         title="Buscar y agregar"
-        description="La búsqueda se ve desde el frontend, pero la consulta real pasa por el backend para proteger la clave de TMDB."
+        description="La búsqueda se ve desde el frontend, pero la consulta real pasa por el backend para mantener la clave del proveedor protegida."
       />
 
       <form
@@ -180,7 +180,7 @@ export default function SearchPage() {
               type="search"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Buscar películas o series en TMDB..."
+              placeholder="Buscar películas o series..."
               className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
             />
           </div>
@@ -365,7 +365,7 @@ export default function SearchPage() {
 
         {!loading && results.length === 0 ? (
           <div className="rounded-lg border bg-card p-4 text-sm text-muted-foreground">
-            Busca una película o serie para ver resultados reales de TMDB.
+            Busca una película o serie para ver resultados.
           </div>
         ) : null}
       </section>

@@ -124,7 +124,7 @@ test.describe("search and add", () => {
 
     await page.goto("/search");
 
-    await page.getByPlaceholder("Buscar películas o series en TMDB...").fill(
+    await page.getByPlaceholder("Buscar películas o series...").fill(
       "Past Lives",
     );
     await page.getByRole("button", { name: "Buscar" }).click();
@@ -169,7 +169,7 @@ test.describe("search loading state", () => {
 
     await page.goto("/search");
     await page
-      .getByPlaceholder("Buscar películas o series en TMDB...")
+      .getByPlaceholder("Buscar películas o series...")
       .fill("Past Lives");
     await page.getByRole("button", { name: "Buscar" }).click();
 

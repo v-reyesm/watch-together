@@ -27,7 +27,7 @@ export function itemFromApi(item: ApiWatchItem, index = 0): WatchItem {
     type: item.mediaType === "tv" ? "serie" : "pelicula",
     meta: [
       item.mediaType === "tv" ? "Serie" : "Película",
-      item.rating ? `${item.rating.toFixed(1)} TMDB` : null,
+      item.rating ? `★ ${item.rating.toFixed(1)}` : null,
     ]
       .filter(Boolean)
       .join(" · "),
@@ -65,7 +65,7 @@ export function itemFromTopRatedCover(
     type: item.mediaType === "tv" ? "serie" : "pelicula",
     meta: [
       item.mediaType === "tv" ? "Serie" : "Película",
-      item.rating ? `${item.rating.toFixed(1)} TMDB` : null,
+      item.rating ? `★ ${item.rating.toFixed(1)}` : null,
     ]
       .filter(Boolean)
       .join(" · "),
@@ -92,7 +92,7 @@ export function itemFromSearchResult(
     type: item.mediaType === "tv" ? "serie" : "pelicula",
     meta: [
       item.mediaType === "tv" ? "Serie" : "Película",
-      item.rating ? `${item.rating.toFixed(1)} TMDB` : null,
+      item.rating ? `★ ${item.rating.toFixed(1)}` : null,
     ]
       .filter(Boolean)
       .join(" · "),

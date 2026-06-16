@@ -218,7 +218,7 @@ test.describe("authenticated UI", () => {
       page.getByRole("heading", { name: "Buscar y agregar" }),
     ).toBeVisible();
     await expect(
-      page.getByPlaceholder("Buscar películas o series en TMDB..."),
+      page.getByPlaceholder("Buscar películas o series..."),
     ).toBeVisible();
     await expect(
       page.getByRole("heading", { name: "Resultados" }),

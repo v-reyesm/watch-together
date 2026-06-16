@@ -22,12 +22,10 @@ export function PosterImage({ src, alt }: { src: string; alt: string }) {
 
   return (
     <>
-      {/* Gentle shimmer placeholder shown until the poster finishes loading. */}
+      {/* Opaque shimmer placeholder shown until the poster finishes loading,
+          so the procedural PosterBlock template never shows through. */}
       {!loaded ? (
-        <span
-          aria-hidden
-          className="absolute inset-0 animate-pulse bg-black/10"
-        />
+        <span aria-hidden className="poster-shimmer absolute inset-0" />
       ) : null}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img

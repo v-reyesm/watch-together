@@ -105,7 +105,15 @@ export default function SearchPage() {
     getWatchLists().then(({ data }) => {
       const nextLists = data ?? [];
       setLists(nextLists);
-      setSelectedListId(nextLists[0]?.id ?? null);
+      // Pre-select the list the user came from (e.g. /search?list=<id>) when it
+      // is one of their fetched lists; otherwise fall back to the first list.
+      const requestedId = Number(
+        new URLSearchParams(window.location.search).get("list"),
+      );
+      const preselected = nextLists.some((list) => list.id === requestedId)
+        ? requestedId
+        : (nextLists[0]?.id ?? null);
+      setSelectedListId(preselected);
     });
   }, []);
 

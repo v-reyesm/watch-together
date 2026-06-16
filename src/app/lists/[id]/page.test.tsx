@@ -122,6 +122,36 @@ describe("ListDetailPage", () => {
     );
   });
 
+  it("points the add button at search pre-selecting the current list", async () => {
+    (getWatchList as jest.Mock).mockResolvedValue({
+      data: {
+        id: 7,
+        name: "Noches de viernes",
+        description: "Películas para dos",
+        members: [
+          {
+            id: 1,
+            name: "Ana",
+            email: "ana@example.com",
+            role: "owner",
+            initials: "A",
+          },
+        ],
+        itemCount: 0,
+        pendingCount: 0,
+        watchedCount: 0,
+        items: [],
+      },
+      status: 200,
+    });
+
+    render(<ListDetailPage />);
+
+    expect(
+      await screen.findByRole("link", { name: /agregar titulo/i }),
+    ).toHaveAttribute("href", "/search?list=7");
+  });
+
   it("shows an error when the API cannot load the list", async () => {
     (getWatchList as jest.Mock).mockResolvedValue({
       data: null,

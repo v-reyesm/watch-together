@@ -347,7 +347,7 @@ export default function ListDetailPage() {
               </Button>
             ) : null}
             <Button asChild size="sm" className="rounded-full">
-              <Link href="/search">
+              <Link href={`/search?list=${listId}`}>
                 <PlusIcon className="size-4" />
                 Agregar titulo
               </Link>

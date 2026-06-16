@@ -21,7 +21,7 @@ import {
   SparklesIcon,
 } from "lucide-react";
 import { createInvite, getWatchSummary, markListItemWatched } from "@/lib/watch-api";
-import type { ApiWatchSummary } from "@/lib/watch-api";
+import type { ApiWatchSuggestion, ApiWatchSummary } from "@/lib/watch-api";
 import { useAuth } from "@/lib/auth";
 import {
   buildInviteMailtoHref,
@@ -65,14 +65,34 @@ export default function Home() {
     if (!summary) return [];
     // Source from the full pending set (every list, no 4-item preview cap) so
     // titles deep in a list can still surface here.
-    const pending = (summary.pendingSuggestions ?? []).map(
-      (suggestion, index) => ({
-        key: `${suggestion.listId}-${suggestion.id}`,
-        item: itemFromApi(suggestion, index),
-        listName: suggestion.listName,
-        listId: suggestion.listId,
-      }),
+    //
+    // A title that lives in several lists shows up once per list in
+    // `pendingSuggestions`, so dedupe BEFORE shuffling/slicing — that way each
+    // distinct title appears at most once and has equal odds of being picked.
+    // `providerId`+`mediaType` is the stable cross-list identity of a title (the
+    // per-list-item `id` is not stable across lists). Fall back to
+    // title+year+mediaType for legacy items without a provider id so genuinely
+    // distinct titles — and a movie vs. a TV entry sharing a name — never
+    // collapse together. First occurrence wins, keeping its list label + link.
+    const dedupedSuggestions = Array.from(
+      (summary.pendingSuggestions ?? [])
+        .reduce((byTitle, suggestion) => {
+          const dedupeKey =
+            suggestion.providerId != null
+              ? `provider:${suggestion.providerId}:${suggestion.mediaType}`
+              : `title:${suggestion.title}:${suggestion.year ?? ""}:${suggestion.mediaType}`;
+          if (!byTitle.has(dedupeKey)) byTitle.set(dedupeKey, suggestion);
+          return byTitle;
+        }, new Map<string, ApiWatchSuggestion>())
+        .values(),
     );
+
+    const pending = dedupedSuggestions.map((suggestion, index) => ({
+      key: `${suggestion.listId}-${suggestion.id}`,
+      item: itemFromApi(suggestion, index),
+      listName: suggestion.listName,
+      listId: suggestion.listId,
+    }));
 
     for (let i = pending.length - 1; i > 0; i -= 1) {
       const j = Math.floor(Math.random() * (i + 1));

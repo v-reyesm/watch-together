@@ -163,6 +163,61 @@ describe("Home", () => {
     ).toBeGreaterThan(1);
   });
 
+  it("dedupes a title that appears in multiple lists in 'Para ver'", async () => {
+    // "Send Help" lives in two lists, so the backend returns it twice (one entry
+    // per list). The home page must collapse it to a single suggestion card.
+    const baseItem = {
+      id: 10,
+      providerName: "tmdb",
+      providerId: 555,
+      mediaType: "movie" as const,
+      title: "Send Help",
+      translatedTitle: "Send Help",
+      year: 2025,
+      posterUrl: "",
+      summary: "",
+      overview: "",
+      genres: [],
+      originalLanguage: "en",
+      rating: 0,
+      status: "pending" as const,
+      watchedAt: null,
+    };
+    const dedupeSummary = {
+      listCount: 2,
+      itemCount: 2,
+      watchedCount: 0,
+      pendingCount: 2,
+      lists: [],
+      highlightedItems: [],
+      pendingSuggestions: [
+        { ...baseItem, id: 10, listId: 5, listName: "Con la baby" },
+        // Same providerId + mediaType, different list-item id and list.
+        { ...baseItem, id: 99, listId: 7, listName: "Forever alone" },
+      ],
+    };
+    // Deterministic shuffle so the assertion never flakes.
+    const randomSpy = jest.spyOn(Math, "random").mockReturnValue(0);
+    (getWatchSummary as jest.Mock).mockResolvedValue({
+      data: dedupeSummary,
+      status: 200,
+    });
+
+    render(<Home />);
+
+    expect(await screen.findByText("Para ver")).toBeInTheDocument();
+    // Exactly one suggestion card for the duplicated title (each card is a link
+    // whose accessible name carries the title + list label).
+    const sendHelpCards = screen.getAllByRole("link", { name: /Send Help/ });
+    expect(sendHelpCards).toHaveLength(1);
+    // It keeps the first occurrence's label + a link to that list.
+    expect(screen.getByText("Con la baby")).toBeInTheDocument();
+    expect(screen.queryByText("Forever alone")).not.toBeInTheDocument();
+    expect(sendHelpCards[0]).toHaveAttribute("href", "/lists/5");
+
+    randomSpy.mockRestore();
+  });
+
   it("creates an invite from the dashboard banner", async () => {
     Object.defineProperty(navigator, "clipboard", {
       configurable: true,

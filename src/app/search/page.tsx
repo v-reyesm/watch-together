@@ -1,15 +1,10 @@
 "use client";
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import {
-  LayoutGridIcon,
-  ListIcon,
-  PlusIcon,
-  SearchIcon,
-  StarIcon,
-} from "lucide-react";
+import { LayoutGridIcon, ListIcon, SearchIcon, StarIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageIntro, PosterGridCard, WatchItemRow } from "@/components/watch-ui";
+import { AddToListButton } from "@/components/add-to-list-button";
 import { MediaDetailModal } from "@/components/media-detail-modal";
 import { addListItem, getWatchLists, searchMedia } from "@/lib/watch-api";
 import type { ApiSearchResult, ApiWatchList } from "@/lib/watch-api";
@@ -99,10 +94,12 @@ export default function SearchPage() {
   const [sort, setSort] = useState<SortMode>("relevance");
 
   const [detail, setDetail] = useState<ApiSearchResult | null>(null);
-  const [addedIds, setAddedIds] = useState<Set<number>>(new Set());
+  // Track added titles per (list, title) so the same title can still be added
+  // to a different list. Keys look like `${listId}:${result.id}`.
+  const [addedKeys, setAddedKeys] = useState<Set<string>>(new Set());
 
-  const selectedListName =
-    lists.find((list) => list.id === selectedListId)?.name ?? null;
+  const isAddedTo = (resultId: number) => (listId: number) =>
+    addedKeys.has(`${listId}:${resultId}`);
 
   useEffect(() => {
     getWatchLists().then(({ data }) => {
@@ -123,12 +120,12 @@ export default function SearchPage() {
     setLoading(false);
   }
 
-  async function handleAdd(result: ApiSearchResult) {
-    if (!selectedListId) {
+  async function handleAdd(result: ApiSearchResult, listId: number | null) {
+    if (!listId) {
       setMessage("Crea o selecciona una lista antes de agregar títulos.");
       return;
     }
-    const { error } = await addListItem(selectedListId, {
+    const { error } = await addListItem(listId, {
       providerId: result.id,
       mediaType: result.mediaType,
       title: result.title,
@@ -140,9 +137,13 @@ export default function SearchPage() {
       rating: result.rating,
     });
     if (!error) {
-      setAddedIds((prev) => new Set(prev).add(result.id));
+      setAddedKeys((prev) => new Set(prev).add(`${listId}:${result.id}`));
+      // The explicitly chosen list sticks as the session default.
+      setSelectedListId(listId);
     }
-    setMessage(error ?? "Título agregado a la lista.");
+    const listName = lists.find((list) => list.id === listId)?.name;
+    const title = result.translatedTitle || result.title;
+    setMessage(error ?? `${title} agregada a ${listName}.`);
   }
 
   const visibleResults = useMemo(() => {
@@ -188,26 +189,6 @@ export default function SearchPage() {
             {loading ? "Buscando..." : "Buscar"}
           </Button>
         </div>
-
-        {lists.length ? (
-          <label className="mt-3 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-            <span>Agregar a</span>
-            <select
-              aria-label="Agregar a la lista"
-              className="min-h-9 rounded-md border bg-background px-3 py-1.5 text-sm font-medium text-foreground outline-none transition-colors hover:bg-accent/50 focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30"
-              value={selectedListId ?? ""}
-              onChange={(event) =>
-                setSelectedListId(Number(event.target.value))
-              }
-            >
-              {lists.map((list) => (
-                <option key={list.id} value={list.id}>
-                  {list.name}
-                </option>
-              ))}
-            </select>
-          </label>
-        ) : null}
       </form>
 
       {message ? (
@@ -327,15 +308,13 @@ export default function SearchPage() {
                     item={itemFromSearchResult(result, index)}
                     onSelect={() => setDetail(result)}
                   />
-                  <Button
-                    variant="outline"
+                  <AddToListButton
                     size="xs"
-                    className="rounded-full"
-                    onClick={() => handleAdd(result)}
-                  >
-                    <PlusIcon className="size-3" />
-                    Agregar a lista
-                  </Button>
+                    lists={lists}
+                    defaultListId={selectedListId}
+                    isAdded={isAddedTo(result.id)}
+                    onAdd={(listId) => handleAdd(result, listId)}
+                  />
                 </div>
               ))}
             </div>
@@ -347,15 +326,14 @@ export default function SearchPage() {
                   item={itemFromSearchResult(result, index)}
                   onOpen={() => setDetail(result)}
                   actions={
-                    <Button
-                      variant="outline"
+                    <AddToListButton
                       size="sm"
-                      className="h-8 rounded-full"
-                      onClick={() => handleAdd(result)}
-                    >
-                      <PlusIcon className="size-4" />
-                      Agregar a lista
-                    </Button>
+                      className="w-auto"
+                      lists={lists}
+                      defaultListId={selectedListId}
+                      isAdded={isAddedTo(result.id)}
+                      onAdd={(listId) => handleAdd(result, listId)}
+                    />
                   }
                 />
               ))}
@@ -374,8 +352,9 @@ export default function SearchPage() {
         result={detail}
         onClose={() => setDetail(null)}
         onAdd={handleAdd}
-        addToLabel={selectedListName}
-        added={detail ? addedIds.has(detail.id) : false}
+        lists={lists}
+        defaultListId={selectedListId}
+        isAdded={detail ? isAddedTo(detail.id) : () => false}
       />
     </div>
   );

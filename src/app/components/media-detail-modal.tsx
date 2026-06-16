@@ -132,7 +132,7 @@ export function MediaDetailModal({
                           <span className="text-white/40">·</span>
                           <span className="inline-flex items-center gap-1">
                             <StarIcon className="size-3.5 fill-amber-400 text-amber-400" />
-                            {result.rating.toFixed(1)} TMDB
+                            {result.rating.toFixed(1)}
                           </span>
                         </>
                       ) : null}

@@ -825,7 +825,7 @@ export function SearchPanel() {
         <SearchIcon className="size-5 shrink-0 text-muted-foreground" />
         <input
           type="search"
-          placeholder="Buscar películas o series en TMDB..."
+          placeholder="Buscar películas o series..."
           className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
           disabled
         />
@@ -862,7 +862,7 @@ export function ComingSoonNote() {
       <SparklesIcon className="mt-0.5 size-4 shrink-0" />
       <p>
         Esta pantalla ya refleja la dirección visual. La búsqueda real se
-        conectará al backend para mantener la clave de TMDB fuera del navegador.
+        conectará al backend para mantener la clave del proveedor fuera del navegador.
       </p>
     </div>
   );

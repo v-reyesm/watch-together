@@ -15,61 +15,66 @@ permissions:
   issues: write
   pull-requests: write
 
-env:
-  NODE_VERSION: "20"
-
 jobs:
+  # ── Change detection ───────────────────────────────────────────────
+  # A pnpm workspace install (in either job) installs the whole monorepo,
+  # so the only thing worth gating on is *which side's tasks* to run.
+  changes:
+    name: "Detect changes"
+    runs-on: ubuntu-latest
+    outputs:
+      api: ${{ steps.filter.outputs.api }}
+      web: ${{ steps.filter.outputs.web }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            api:
+              - 'src/api/**'
+              - 'pnpm-lock.yaml'
+              - 'pnpm-workspace.yaml'
+              - '.github/**'
+            web:
+              - 'src/**'
+              - '!src/api/**'
+              - 'public/**'
+              - 'tests/**'
+              - 'package.json'
+              - 'pnpm-lock.yaml'
+              - 'pnpm-workspace.yaml'
+              - 'next.config.ts'
+              - 'tsconfig.json'
+              - 'tailwind.config.js'
+              - 'postcss.config.mjs'
+              - 'eslint.config.mjs'
+              - 'jest.config.ts'
+              - 'jest.setup.ts'
+              - 'playwright.config.ts'
+              - 'components.json'
+              - '.github/**'
+
   # ── Backend ────────────────────────────────────────────────────────
-  api-lint:
-    name: "API · Lint"
+  api-checks:
+    name: "API · Lint + Build + Unit"
+    needs: changes
+    if: needs.changes.outputs.api == 'true'
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: src/api
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
+      - uses: ./.github/actions/setup
       - run: pnpm run lint
+      - run: pnpm run build # nest build also type-checks (replaces tsc --noEmit)
+      - run: npx jest --ci --forceExit
 
-  api-typecheck:
-    name: "API · Type check"
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: src/api
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - run: npx tsc --noEmit
-
-  api-unit-tests:
-    name: "API · Unit tests"
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: src/api
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - run: npx jest --no-cache --forceExit
-
-  api-e2e-tests:
-    name: "API · E2E tests"
+  api-e2e:
+    name: "API · E2E"
+    needs: changes
+    if: needs.changes.outputs.api == 'true'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -80,83 +85,49 @@ jobs:
       GOOGLE_CLIENT_ID: ci-test-google-client-id
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - run: npx jest --config ./test/jest-e2e.json --no-cache --forceExit
-
-  api-build:
-    name: "API · Build"
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: src/api
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm run build
+      - uses: ./.github/actions/setup
+      - run: npx jest --config ./test/jest-e2e.json --ci --forceExit
 
   # ── Frontend ───────────────────────────────────────────────────────
-  web-lint:
-    name: "Web · Lint"
+  web-checks:
+    name: "Web · Lint + Build + Unit"
+    needs: changes
+    if: needs.changes.outputs.web == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: ./.github/actions/setup
+      - name: Cache Next.js build
+        uses: actions/cache@v4
         with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
+          path: .next/cache
+          key: next-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ hashFiles('src/**/*.[jt]s', 'src/**/*.[jt]sx') }}
+          restore-keys: |
+            next-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-
       - run: pnpm run lint
-
-  web-typecheck:
-    name: "Web · Type check"
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - run: rm -rf .next
-      - run: npx tsc --noEmit
-
-  web-tests:
-    name: "Web · Tests"
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - run: npx jest --config jest.config.ts --no-cache
+      - run: pnpm run build # next build also type-checks (replaces tsc --noEmit)
+      - run: npx jest --config jest.config.ts --ci
 
   web-e2e:
     name: "Web · E2E"
+    needs: changes
+    if: needs.changes.outputs.web == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: ./.github/actions/setup
+      - name: Cache Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@v4
         with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm exec playwright install --with-deps chromium
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+      - name: Install Playwright (browser + deps)
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: pnpm exec playwright install --with-deps chromium
+      - name: Install Playwright OS deps (cached browser)
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: pnpm exec playwright install-deps chromium
       - run: pnpm run test:e2e:web
       - if: always()
         id: upload-playwright-report
@@ -246,32 +217,33 @@ jobs:
               });
             }
 
-  web-build:
-    name: "Web · Build"
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm run build
-
   # ── Security ───────────────────────────────────────────────────────
   audit:
     name: "Security audit"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
+      - uses: ./.github/actions/setup
       - run: pnpm audit --prod || true
         name: Audit root dependencies
       - run: pnpm --filter watch-together-backend audit --prod || true
         name: Audit API dependencies
+
+  # ── Branch-protection gate ─────────────────────────────────────────
+  # Single required check: passes only if no needed job failed/was cancelled.
+  # Skipped side-jobs (path-filtered out) count as success.
+  ci:
+    name: "CI"
+    if: always()
+    needs: [changes, api-checks, api-e2e, web-checks, web-e2e, audit]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify no job failed
+        run: |
+          results="${{ needs.changes.result }} ${{ needs.api-checks.result }} ${{ needs.api-e2e.result }} ${{ needs.web-checks.result }} ${{ needs.web-e2e.result }} ${{ needs.audit.result }}"
+          echo "Job results: $results"
+          if echo "$results" | grep -qE 'failure|cancelled'; then
+            echo "::error::At least one required job failed or was cancelled."
+            exit 1
+          fi
+          echo "All required jobs passed (or were skipped)."

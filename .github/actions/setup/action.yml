@@ -1,0 +1,19 @@
+name: "Setup workspace"
+description: "Set up pnpm + Node and install the workspace with a warm store cache"
+
+inputs:
+  node-version:
+    description: "Node.js version"
+    required: false
+    default: "20"
+
+runs:
+  using: composite
+  steps:
+    - uses: pnpm/action-setup@v4
+    - uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
+        cache: pnpm
+    - run: pnpm install --frozen-lockfile
+      shell: bash

@@ -1,24 +1,30 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import type { Metadata, Viewport } from "next";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ColorSchemeProvider } from "@/components/color-scheme-provider";
-import { AppSidebar } from "@/components/app-sidebar";
-import { MobileBottomNav } from "@/components/mobile-bottom-nav";
+import { AuthProvider } from "@/lib/auth";
+import { GoogleProvider } from "@/components/auth/google-provider";
+import { AuthGuard } from "@/components/auth/auth-guard";
+import { AuthLayout } from "@/components/auth/auth-layout";
 import "./globals.css";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
 
 export const metadata: Metadata = {
   title: "WatchTogether",
-  description: "A clean, minimal watchlist app for sharing movie & series lists with your partner or friends",
+  description:
+    "App para listas compartidas de películas y series con tu pareja o amigos",
+  applicationName: "WatchTogether",
+  icons: {
+    icon: "/icons/icon-192.png",
+    apple: "/icons/icon-192.png",
+  },
+  appleWebApp: {
+    capable: true,
+    title: "WatchTogether",
+    statusBarStyle: "default",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#be123c",
 };
 
 export default function RootLayout({
@@ -27,31 +33,29 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="es" suppressHydrationWarning>
       <head>
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){var s=localStorage.getItem("watchtogether-color-scheme");var v=["violet","blue","emerald","rose","amber"].indexOf(s)>=0?s:"violet";document.documentElement.dataset.colorScheme=v})();`,
+            __html: `(function(){var s=localStorage.getItem("watchtogether-color-scheme");var m={emerald:"bosque",rose:"rosita",blue:"indigo",violet:"ciruela",amber:"arena"};s=m[s]||s;var a=["rosita","lila","bosque","terracota","arena","indigo","tinta","cereza","ciruela","aqua","oliva","rosa"];var v=a.indexOf(s)>=0?s:"rosita";document.documentElement.dataset.colorScheme=v})();`,
           }}
         />
       </head>
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} min-h-screen antialiased`}
-      >
+      <body className="min-h-screen antialiased">
         <ThemeProvider
           attribute="class"
-          defaultTheme="system"
+          defaultTheme="light"
           enableSystem
           disableTransitionOnChange
         >
           <ColorSchemeProvider>
-          <div className="flex min-h-screen">
-            <AppSidebar />
-            <main className="min-h-0 flex-1 overflow-auto pb-24 md:pb-0">
-              {children}
-            </main>
-            <MobileBottomNav />
-          </div>
+            <GoogleProvider>
+              <AuthProvider>
+                <AuthGuard>
+                  <AuthLayout>{children}</AuthLayout>
+                </AuthGuard>
+              </AuthProvider>
+            </GoogleProvider>
           </ColorSchemeProvider>
         </ThemeProvider>
       </body>

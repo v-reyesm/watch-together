@@ -21,7 +21,7 @@ jobs:
   # so the only thing worth gating on is *which side's tasks* to run.
   changes:
     name: "Detect changes"
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-2vcpu-ubuntu-2404
     outputs:
       api: ${{ steps.filter.outputs.api }}
       web: ${{ steps.filter.outputs.web }}
@@ -60,7 +60,7 @@ jobs:
     name: "API · Lint + Build + Unit"
     needs: changes
     if: needs.changes.outputs.api == 'true'
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-2vcpu-ubuntu-2404
     defaults:
       run:
         working-directory: src/api
@@ -75,7 +75,7 @@ jobs:
     name: "API · E2E"
     needs: changes
     if: needs.changes.outputs.api == 'true'
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-2vcpu-ubuntu-2404
     defaults:
       run:
         working-directory: src/api
@@ -93,7 +93,7 @@ jobs:
     name: "Web · Lint + Build + Unit"
     needs: changes
     if: needs.changes.outputs.web == 'true'
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-2vcpu-ubuntu-2404
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup
@@ -112,7 +112,7 @@ jobs:
     name: "Web · E2E"
     needs: changes
     if: needs.changes.outputs.web == 'true'
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-2vcpu-ubuntu-2404
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup
@@ -220,7 +220,7 @@ jobs:
   # ── Security ───────────────────────────────────────────────────────
   audit:
     name: "Security audit"
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-2vcpu-ubuntu-2404
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup
@@ -236,7 +236,7 @@ jobs:
     name: "CI"
     if: always()
     needs: [changes, api-checks, api-e2e, web-checks, web-e2e, audit]
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-2vcpu-ubuntu-2404
     steps:
       - name: Verify no job failed
         run: |

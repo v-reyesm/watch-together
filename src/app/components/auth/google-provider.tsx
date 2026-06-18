@@ -1,0 +1,19 @@
+"use client";
+
+import { GoogleOAuthProvider } from "@react-oauth/google";
+
+const GOOGLE_CLIENT_ID =
+  process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "";
+
+export const hasGoogleClientId = GOOGLE_CLIENT_ID.length > 0;
+
+export function GoogleProvider({ children }: { children: React.ReactNode }) {
+  if (!hasGoogleClientId) {
+    return <>{children}</>;
+  }
+  return (
+    <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
+      {children}
+    </GoogleOAuthProvider>
+  );
+}

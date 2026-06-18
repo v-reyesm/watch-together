@@ -26,6 +26,56 @@
 - UI shows watched status (alone vs together) and list context.
 - Runs via Docker Compose with documented env vars and a clean setup.
 
+## Progress Snapshot (2026-06-11)
+- Done: `WT-012` Sign-in/out UX + protected routes (PR #2)
+- Done: `WT-013` Create/lookup user record on login (PR #2)
+- Done: `WT-014` Profile page essentials (PR #2 + PR #23)
+- Done: `WT-015` Session expiry + logout behavior (global 401 handling)
+- Done: `WT-020` Create list (PR #7)
+- Done: `WT-021` View lists with real API data (PR #5 + PR #23)
+- Done: `WT-022` List detail page (PR #8)
+- Done: `WT-023` List permissions owner/member (PR #11 + PR #26)
+- Done: `WT-024` Edit list metadata (API pre-existing, UI in PR #26)
+- Done: `WT-025` Delete list (API pre-existing, UI in PR #26)
+- Done: `WT-026` Members panel + remove/leave actions (PR #26)
+- Done: `WT-030` Create invite link (PR #10)
+- Done: `WT-031` Join via invite link (PR #10)
+- Done: `WT-032` Invite by email (PR #22)
+- Done: `WT-033` View/revoke pending invites (PR #18)
+- Done: `WT-040` TMDB client backend-only (early backend work)
+- Done: `WT-041` Search UI wired to backend (PR #5 + PR #23)
+- Done: `WT-042` Add item to list from TMDB with dedupe (PR #5)
+- Done: `WT-043` Remove item from list (PR #9)
+- Done: `WT-044` TMDB caching with TTL (early backend work)
+- Done: `WT-045` Provider adapter interface (early backend work)
+- Done: `WT-050` Watch events model + endpoints (PR #21)
+- Done: `WT-052` Dashboard stats (PR #14 + PR #23)
+- Done: `WT-053` Undo / unwatch (PR #9)
+- Done: `WT-054` Watch history view in Profile (PRs #21, #23)
+- Done: `WT-060` Spanish-first UI copy pass (PR #20)
+- Done: `WT-070` PWA installability: manifest + icons (PR #25)
+- Done: `WT-080` API auth guard + list authorization (PR #11)
+- Done: `WT-081` Rate limiting via Throttler (limits in app.module)
+- Done: `WT-083` Secure HTTP headers via Helmet
+- Done: `WT-084` CORS policy (env-driven, documented in deployment guide)
+- Done: `WT-086` Health endpoints + docker healthchecks (PR #19)
+- Done: `WT-100` Tests for core flow (PR #11)
+- Done: `WT-101` CI pipeline (.github/workflows/ci.yml)
+- Done: `WT-111` Deployment notes (PR #24)
+- Done: `WT-120` Home dashboard data endpoint for UI proposal (PR #14)
+- Done: `WT-121` List detail aggregate endpoint (PR #16)
+- Done: `WT-122` List item mutation endpoints (PR #5)
+- Done: `WT-123` Watch-state endpoints for list items (PR #15)
+- Done: `WT-124` Invite endpoints + UI for dashboard and list header (PRs #17, #18)
+- Done: `WT-125` Frontend data integration for proposal UI (PR #23)
+
+Remaining: `WT-001`–`WT-004` (spec/contract docs), `WT-010`/`WT-011` (OAuth
+prod plan + auth decision doc), `WT-046` (item card polish), `WT-061` (i18n
+structure), `WT-071` (offline shell), `WT-082` (audit log), `WT-085`
+(request IDs), `WT-090` (error message pass), `WT-091` (a11y), `WT-102`
+(seed data), `WT-110` (complete .env.example), `WT-112` (tested backup
+runbook), `WT-126` (post-MVP voting).
+
 ## Tickets (Grouped by Epic)
 
 ## Epic: Product, Architecture, and Contracts
@@ -73,6 +123,7 @@
 
 ### WT-012 (MVP, P0, L): Implement sign-in/out UX + protected routes
 - Description: Add a sign-in page/state, sign in with Google, sign out, and route protection.
+- Status: Done in PR #2.
 - Acceptance criteria:
   - Unauthed users are redirected to sign-in.
   - Authed users see their account in Profile.
@@ -80,12 +131,14 @@
 
 ### WT-013 (MVP, P0, M): Create/lookup user record on login
 - Description: Create a `users` row on first login and re-use it on subsequent logins.
+- Status: Done in PR #2.
 - Acceptance criteria:
   - Stable mapping from Google identity to internal user id.
   - Document minimal account deletion approach for MVP (manual/admin is fine).
 
 ### WT-014 (MVP, P1, S): Profile page essentials
 - Description: Make `/profile` a real page for MVP.
+- Status: Done (PR #2 base, watch history added in PR #23).
 - Acceptance criteria:
   - Shows name/email/avatar.
   - Contains Sign out.
@@ -93,6 +146,7 @@
 
 ### WT-015 (Foundation, P1, S): Session expiry + logout behavior
 - Description: Define and implement what happens on session expiry.
+- Status: Done (consistent 401s; apiFetch redirects to sign-in).
 - Acceptance criteria:
   - API returns 401 consistently.
   - Frontend handles 401 by redirecting to sign-in cleanly.
@@ -101,36 +155,42 @@
 
 ### WT-020 (MVP, P0, M): Create list (API + UI)
 - Description: Create list with name/description and owner.
+- Status: Done in PR #7.
 - Acceptance criteria:
   - List appears on Home and Lists pages.
   - Owner is automatically a list member.
 
 ### WT-021 (MVP, P0, M): View lists (API + UI)
 - Description: Show lists the user is a member of, with summary stats.
+- Status: Done (PR #5, real-data wiring completed in PR #23).
 - Acceptance criteria:
   - Empty state uses real API data.
   - Summary includes item count and watched count (rule defined).
 
 ### WT-022 (MVP, P0, M): List detail page (route + UI)
 - Description: Implement list detail UI: list info, members, items, actions.
+- Status: Done in PR #8.
 - Acceptance criteria:
   - Route chosen (ex: `/lists/:id`).
   - Loading/error/empty states.
 
 ### WT-023 (MVP, P0, M): List permissions (owner/member)
 - Description: Define and enforce permissions.
+- Status: Done (PR #11 enforcement, member actions completed in PR #26).
 - Acceptance criteria:
   - Owner-only actions defined (delete list, remove members, manage invites).
   - Member actions defined (add item, mark watched, leave list).
 
 ### WT-024 (MVP, P1, S): Edit list metadata
 - Description: Rename list / edit description.
+- Status: Done (API pre-existing, UI in PR #26).
 - Acceptance criteria:
   - Permission enforced (owner-only unless documented otherwise).
   - Changes reflected immediately across UI.
 
 ### WT-025 (MVP, P1, S): Delete list
 - Description: Delete a list safely (and define hard vs soft delete).
+- Status: Done (API pre-existing hard delete with cascade, UI with confirmation in PR #26).
 - Acceptance criteria:
   - Owner-only.
   - Confirmation dialog.
@@ -138,6 +198,7 @@
 
 ### WT-026 (MVP, P1, M): Members panel + remove/leave actions
 - Description: Manage members from list detail.
+- Status: Done in PR #26.
 - Acceptance criteria:
   - Owner can remove member.
   - Member can leave list.
@@ -147,6 +208,7 @@
 
 ### WT-030 (MVP, P0, M): Create invite link
 - Description: Create join tokens with expiry and revoke support.
+- Status: Done in PR #10.
 - Acceptance criteria:
   - High entropy token.
   - Expiry behavior defined.
@@ -154,18 +216,21 @@
 
 ### WT-031 (MVP, P0, M): Join via invite link
 - Description: Accept invite token and add user to list.
+- Status: Done in PR #10.
 - Acceptance criteria:
   - Invalid/expired/revoked token shows friendly error.
   - Already-a-member is handled cleanly.
 
 ### WT-032 (MVP, P1, M): Invite by email (define behavior + implement)
 - Description: Implement "invite by email" as either real email delivery or a `mailto:` flow.
+- Status: Done in PR #22 (mailto flow).
 - Acceptance criteria:
   - Chosen behavior documented.
   - Owner can copy/share a ready-made invite message.
 
 ### WT-033 (MVP, P1, S): View/revoke pending invites
 - Description: Owner can see active invites and revoke them.
+- Status: Done in PR #18.
 - Acceptance criteria:
   - Shows status: active/expired/revoked/used.
   - Revoke is immediate.
@@ -174,36 +239,42 @@
 
 ### WT-040 (MVP, P0, M): TMDB client (backend-only)
 - Description: Implement a backend TMDB wrapper with centralized config and error handling.
+- Status: Done (tmdb.service.ts; key never reaches the browser).
 - Acceptance criteria:
   - TMDB key never reaches the browser.
   - Handles 429/401/timeouts predictably.
 
 ### WT-041 (MVP, P0, M): Search UI wired to backend
 - Description: Implement search input + results + "Add to list".
+- Status: Done (PR #5, real-data wiring completed in PR #23).
 - Acceptance criteria:
   - Works for movies and TV.
   - Debounce + loading + no-results state.
 
 ### WT-042 (MVP, P0, M): Add item to list from TMDB
 - Description: Add a TMDB result as a list item with stored metadata.
+- Status: Done in PR #5 (dedupe per list enforced with 409).
 - Acceptance criteria:
   - Dedupe rule enforced per list.
   - Stores poster/title/year/type/provider id.
 
 ### WT-043 (MVP, P1, S): Remove item from list
 - Description: Remove an item from a list.
+- Status: Done in PR #9.
 - Acceptance criteria:
   - Confirmation required.
   - Produces audit log entry (minimal).
 
 ### WT-044 (MVP, P1, S): TMDB caching strategy
 - Description: Cache TMDB search responses to reduce rate-limit risk and speed UX.
+- Status: Done (TmdbSearchCache, TTL via SEARCH_CACHE_TTL_DAYS, default 30 days).
 - Acceptance criteria:
   - Cache TTL defined and documented.
   - No user-specific data is cached in a way that can leak between users.
 
 ### WT-045 (Foundation, P1, S): Provider adapter interface
 - Description: Define an internal provider interface (search + details) so OMDb can be added later.
+- Status: Done (media-provider.interface; items store provider name + id).
 - Acceptance criteria:
   - Interface supports search and details fetch.
   - List items store provider name + provider id.
@@ -218,6 +289,7 @@
 
 ### WT-050 (MVP, P0, L): Watch events model + endpoints
 - Description: Implement watched tracking with context and timestamps.
+- Status: Done in PR #21.
 - Acceptance criteria:
   - Mark watched inside shared list => "together" event linked to list.
   - Defines how events map to current watched state (history vs last-event-wins).
@@ -231,25 +303,112 @@
 
 ### WT-052 (MVP, P1, S): Dashboard stats (API + UI)
 - Description: Replace Home placeholders with real aggregated data.
+- Status: Done (summary endpoint PR #14, Home wiring PR #23).
 - Acceptance criteria:
   - Shows list count and watched ratio based on backend data.
 
 ### WT-053 (MVP, P1, S): Undo / unwatch
 - Description: Allow correcting mistakes by undoing last watch action.
+- Status: Done in PR #9.
 - Acceptance criteria:
   - UI offers "undo".
   - API defines rule clearly (delete last event vs explicit unwatch state).
 
 ### WT-054 (MVP, P2, M): Watch history view (Profile)
 - Description: Simple feed of watch events showing alone vs together and list context.
+- Status: Done in PRs #21 and #23 (filter alone/together pending as polish).
 - Acceptance criteria:
   - Shows last N events.
   - Filter: alone/together.
+
+### WT-120 (MVP, P0, M): Home dashboard data endpoint for UI proposal
+- Description: Replace Home mock data with a backend-backed dashboard/list summary response.
+- Status: Done in PR #14.
+- Proposed endpoint(s):
+  - `GET /watch-lists/summary` or extend `GET /watch-lists` with summary fields.
+- Acceptance criteria:
+  - Returns only lists the current user belongs to.
+  - Includes list id, name, description, members, item count, pending count, watched count, and preview items.
+  - Supports the Home metrics: total shared lists and watched ratio.
+  - Enforces auth and never leaks another user's private lists.
+  - Frontend Home page has loading, empty, and error states in Spanish.
+
+### WT-121 (MVP, P0, L): List detail aggregate endpoint for proposal layout
+- Description: Implement the list detail endpoint needed by `/lists/:id` so the current proposal layout can render real list data.
+- Status: Done in PR #16.
+- Proposed endpoint(s):
+  - `GET /watch-lists/:id`
+- Acceptance criteria:
+  - Returns list metadata, members, item rows, and per-item watched status/context.
+  - Each item includes provider name, provider id, title, year, media type, poster URL, genres/summary where available, and current MVP watch state.
+  - Does not expose ranking/voting fields in MVP responses except behind clearly named Post-MVP placeholders if needed.
+  - Returns 403 for non-members and 404 only when appropriate.
+  - Frontend can remove the `sampleLists`/`sampleItems` dependency from the list detail screen.
+
+### WT-122 (MVP, P0, M): List item mutation endpoints
+- Description: Support adding/removing media from a shared list from the Search and List views.
+- Status: Done in PR #5.
+- Proposed endpoint(s):
+  - `POST /watch-lists/:id/items`
+  - `DELETE /watch-lists/:id/items/:itemId`
+- Acceptance criteria:
+  - Add accepts provider name + provider id and stores normalized media metadata from backend provider data.
+  - Enforces dedupe per list by provider name + provider id.
+  - Remove is permission-checked and returns a Spanish-friendly conflict/error when needed.
+  - Search UI can add to a selected list without the TMDB key reaching the browser.
+
+### WT-123 (MVP, P0, M): Watch-state endpoints for list items
+- Description: Power the proposal UI controls for "marcar vista" and watched-alone/watched-together context.
+- Status: Done in PR #15.
+- Proposed endpoint(s):
+  - `POST /watch-lists/:id/items/:itemId/watch-events`
+  - `DELETE /watch-lists/:id/items/:itemId/watch-events/latest` or another explicit undo endpoint from WT-053.
+- Acceptance criteria:
+  - Marking watched inside a shared list records list context and can infer "watched together" per the locked MVP rule.
+  - API response returns the updated item watch state so the UI can update without a full refresh.
+  - Undo/unwatch behavior follows the rule defined in WT-053.
+  - 401/403/404 responses are consistent and mapped to Spanish UI messages.
+
+### WT-124 (MVP, P1, M): Invite endpoints for dashboard and list header UI
+- Description: Implement the endpoints needed by the Home invite banner and List header invite action.
+- Status: Done in PRs #17 (endpoints) and #18 (UI).
+- Proposed endpoint(s):
+  - `POST /watch-lists/:id/invites`
+  - `GET /watch-lists/:id/invites`
+  - `POST /invites/:token/join`
+  - `DELETE /watch-lists/:id/invites/:inviteId` or `PATCH` revoke.
+- Acceptance criteria:
+  - Owner can create and copy/share an invite link.
+  - Pending invite status can be shown and revoked.
+  - Join flow handles invalid, expired, revoked, and already-member states with Spanish messages.
+  - Email invite behavior stays aligned with WT-032.
+
+### WT-125 (MVP, P1, M): Frontend data integration for proposal UI
+- Description: Replace visual sample data on Home, Lists, Search, Profile, and Config where backend data exists.
+- Status: Done in PR #23.
+- Acceptance criteria:
+  - Shared typed API client methods exist for lists, items, invites, watch events, search, and profile.
+  - Core proposal screens show loading, empty, unauthorized, forbidden, and retry/error states.
+  - Existing Playwright UI smoke tests keep passing after real data wiring.
+  - Mock-only components remain limited to `Coming soon` or explicit demo/test fixtures.
+
+### WT-126 (Post-MVP, P2, L): Interest voting and ranking API for Coming soon
+- Description: Define and implement the future ranking/quick-decision feature shown in the hidden Coming soon section.
+- Proposed endpoint(s):
+  - `POST /watch-lists/:id/items/:itemId/interest-votes`
+  - `GET /watch-lists/:id/ranking`
+  - Optional quick-decision queue endpoint for one-card-at-a-time voting.
+- Acceptance criteria:
+  - Explicitly stays out of MVP unless scope is reopened.
+  - Supports per-user interest values and list-level ranking/order by match.
+  - Handles two-user primary scenario first, without blocking future multi-user lists.
+  - Does not change MVP watch-event semantics.
 
 ## Epic: Localization (Spanish First)
 
 ### WT-060 (MVP, P0, M): Spanish-first UI copy pass
 - Description: Replace visible UI strings with Spanish across the MVP flow.
+- Status: Done in PR #20.
 - Acceptance criteria:
   - No broken layouts.
   - Error states also translated.
@@ -264,6 +423,7 @@
 
 ### WT-070 (MVP, P0, M): PWA installability (manifest + icons)
 - Description: Make the app installable on mobile home screen/app drawer.
+- Status: Done in PR #25 (HTTPS requirement documented in docs/deployment.md).
 - Acceptance criteria:
   - Manifest configured correctly.
   - HTTPS requirement documented (OAuth + PWA).
@@ -278,12 +438,14 @@
 
 ### WT-080 (MVP, P0, M): API auth guard + list authorization
 - Description: Enforce authentication and per-list authorization for all endpoints.
+- Status: Done in PR #11.
 - Acceptance criteria:
   - 401 and 403 are consistent.
   - Unauthorized access cannot read list details or items.
 
 ### WT-081 (MVP, P1, S): Rate limiting and abuse controls
 - Description: Add throttling (especially for search) and basic abuse controls.
+- Status: Done (ThrottlerModule in app.module; limits configured in code).
 - Acceptance criteria:
   - Limits documented.
   - Friendly error on limit exceeded.
@@ -295,12 +457,14 @@
 
 ### WT-083 (MVP, P1, S): Secure HTTP headers
 - Description: Add security headers appropriate for an internet app.
+- Status: Done (Helmet in main.ts).
 - Acceptance criteria:
   - Uses standard approach (ex: Helmet).
   - Documents any PWA/OAuth-related exceptions.
 
 ### WT-084 (MVP, P1, S): CORS policy
 - Description: Define allowed origins/methods/headers for web <-> api communication.
+- Status: Done (CORS_ORIGIN env-driven; documented in docs/deployment.md).
 - Acceptance criteria:
   - Dev and prod origins documented.
   - CORS failures are easy to diagnose (clear logs).
@@ -313,6 +477,7 @@
 
 ### WT-086 (MVP, P1, S): Health endpoints + docker healthchecks
 - Description: Ensure frontend and backend expose health endpoints used by Docker Compose.
+- Status: Done in PR #19.
 - Acceptance criteria:
   - `/health` (or equivalent) returns 200 when ready.
   - Docker Compose uses healthchecks for dependency ordering.
@@ -333,12 +498,14 @@
 
 ### WT-100 (MVP, P1, M): Tests for core flow
 - Description: Minimum tests that protect the MVP journey.
+- Status: Done in PR #11.
 - Acceptance criteria:
   - Backend: auth + create list + invite join + add item + mark watched.
   - Frontend: smoke tests for protected routing and core screens.
 
 ### WT-101 (MVP, P1, S): CI pipeline
 - Description: Run lint/typecheck/tests on push/PR.
+- Status: Done (.github/workflows/ci.yml: lint, typecheck, unit, e2e, build, audit).
 - Acceptance criteria:
   - CI fails on type errors and test failures.
 
@@ -358,6 +525,7 @@
 
 ### WT-111 (MVP, P1, M): Deployment notes (single Docker host)
 - Description: Document a simple deployment including TLS/reverse proxy and domain setup.
+- Status: Done in PR #24.
 - Acceptance criteria:
   - Mentions HTTPS requirement for OAuth + PWA.
   - Includes DB backup approach and where backups live.

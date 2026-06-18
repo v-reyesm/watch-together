@@ -4,7 +4,7 @@ import { UpdateTvSeryDto } from './dto/update-tv-sery.dto';
 
 @Injectable()
 export class TvSeriesService {
-  create(createTvSeryDto: CreateTvSeryDto) {
+  create(_createTvSeryDto: CreateTvSeryDto) {
     return 'This action adds a new tvSery';
   }
 
@@ -16,7 +16,7 @@ export class TvSeriesService {
     return `This action returns a #${id} tvSery`;
   }
 
-  update(id: number, updateTvSeryDto: UpdateTvSeryDto) {
+  update(id: number, _updateTvSeryDto: UpdateTvSeryDto) {
     return `This action updates a #${id} tvSery`;
   }
 

@@ -1,11 +1,21 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+} from '@nestjs/common';
 import { StreamingProvidersService } from './streaming-providers.service';
 import { CreateStreamingProviderDto } from './dto/create-streaming-provider.dto';
 import { UpdateStreamingProviderDto } from './dto/update-streaming-provider.dto';
 
 @Controller('streaming-providers')
 export class StreamingProvidersController {
-  constructor(private readonly streamingProvidersService: StreamingProvidersService) {}
+  constructor(
+    private readonly streamingProvidersService: StreamingProvidersService,
+  ) {}
 
   @Post()
   create(@Body() createStreamingProviderDto: CreateStreamingProviderDto) {
@@ -23,8 +33,14 @@ export class StreamingProvidersController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateStreamingProviderDto: UpdateStreamingProviderDto) {
-    return this.streamingProvidersService.update(+id, updateStreamingProviderDto);
+  update(
+    @Param('id') id: string,
+    @Body() updateStreamingProviderDto: UpdateStreamingProviderDto,
+  ) {
+    return this.streamingProvidersService.update(
+      +id,
+      updateStreamingProviderDto,
+    );
   }
 
   @Delete(':id')

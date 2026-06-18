@@ -1,0 +1,128 @@
+name: Release & Publish Docker
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+  packages: write
+  issues: write
+  pull-requests: write
+
+env:
+  NODE_VERSION: "20"
+
+jobs:
+  release:
+    name: Semantic Release
+    runs-on: blacksmith-2vcpu-ubuntu-2404
+    outputs:
+      new_release_published: ${{ steps.semantic.outputs.new_release_published }}
+      new_release_version: ${{ steps.semantic.outputs.new_release_version }}
+      release_branch: ${{ steps.branch.outputs.release_branch }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Resolve release branch
+        id: branch
+        shell: bash
+        run: echo "release_branch=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Run semantic-release
+        id: semantic
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          npx --yes semantic-release
+          if git describe --tags --exact-match HEAD 2>/dev/null; then
+            VERSION=$(git describe --tags --exact-match HEAD | sed 's/^v//')
+            echo "new_release_published=true" >> "$GITHUB_OUTPUT"
+            echo "new_release_version=$VERSION" >> "$GITHUB_OUTPUT"
+          else
+            echo "new_release_published=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  docker:
+    name: Build & Push Docker Images
+    needs: release
+    runs-on: blacksmith-2vcpu-ubuntu-2404
+    if: always() && needs.release.result == 'success'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: frontend
+            context: .
+            file: ./Dockerfile
+            image_suffix: web
+          - name: backend
+            context: ./src/api
+            file: ./src/api/Dockerfile
+            image_suffix: api
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.release.outputs.release_branch }}
+          fetch-depth: 0
+
+      - name: Resolve image owner
+        id: owner
+        shell: bash
+        run: echo "value=${GITHUB_REPOSITORY_OWNER,,}" >> "$GITHUB_OUTPUT"
+
+      - name: Resolve image version
+        id: version
+        shell: bash
+        run: |
+          if [ "${{ needs.release.outputs.new_release_published }}" = "true" ]; then
+            VERSION="${{ needs.release.outputs.new_release_version }}"
+          else
+            VERSION=$(git tag --sort=-version:refname | grep -E '^v[0-9]' | head -1 | sed 's/^v//')
+            if [ -z "$VERSION" ]; then
+              VERSION=$(node -p "require('./package.json').version")
+            fi
+          fi
+          echo "value=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Resolved version: $VERSION"
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ steps.owner.outputs.value }}/watch-together-${{ matrix.image_suffix }}
+          tags: |
+            type=raw,value=${{ steps.version.outputs.value }}
+            type=raw,value=latest
+
+      - name: Set up Docker Buildx
+        uses: useblacksmith/setup-docker-builder@v1
+
+      - name: Build and push ${{ matrix.name }} image
+        uses: useblacksmith/build-push-action@v2
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.file }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=registry,ref=ghcr.io/${{ steps.owner.outputs.value }}/watch-together-${{ matrix.image_suffix }}:latest
+          cache-to: type=inline

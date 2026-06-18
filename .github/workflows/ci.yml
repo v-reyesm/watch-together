@@ -60,7 +60,7 @@ jobs:
     name: "API · Lint + Build + Unit"
     needs: changes
     if: needs.changes.outputs.api == 'true'
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: blacksmith-2vcpu-ubuntu-2404
     defaults:
       run:
         working-directory: src/api
@@ -75,7 +75,7 @@ jobs:
     name: "API · E2E"
     needs: changes
     if: needs.changes.outputs.api == 'true'
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: blacksmith-2vcpu-ubuntu-2404
     defaults:
       run:
         working-directory: src/api
@@ -93,7 +93,7 @@ jobs:
     name: "Web · Lint + Build + Unit"
     needs: changes
     if: needs.changes.outputs.web == 'true'
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: blacksmith-2vcpu-ubuntu-2404
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup
@@ -112,7 +112,7 @@ jobs:
     name: "Web · E2E"
     needs: changes
     if: needs.changes.outputs.web == 'true'
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: blacksmith-2vcpu-ubuntu-2404
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup
@@ -220,7 +220,7 @@ jobs:
   # ── Security ───────────────────────────────────────────────────────
   audit:
     name: "Security audit"
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: blacksmith-2vcpu-ubuntu-2404
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup

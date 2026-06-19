@@ -36,7 +36,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const fetchUser = useCallback(async (accessToken: string) => {
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+      const apiUrl =
+        typeof window === "undefined"
+          ? (process.env.API_INTERNAL_URL ?? "http://localhost:8080")
+          : "";
       const res = await fetch(`${apiUrl}/api/users/me`, {
         headers: { Authorization: `Bearer ${accessToken}` },
       });

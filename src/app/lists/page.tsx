@@ -11,7 +11,8 @@ import {
   Trash2Icon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { InvitePanel } from "@/components/invite-panel";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { InviteModal } from "@/components/invite-modal";
 import {
   ListTabs,
   MemberStack,
@@ -39,6 +40,11 @@ export default function ListsPage() {
   const [currentList, setCurrentList] = useState<ApiWatchList | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [inviteOpen, setInviteOpen] = useState(false);
+  const [removeTarget, setRemoveTarget] = useState<{
+    itemId: number;
+    title: string;
+  } | null>(null);
 
   async function loadLists() {
     setLoading(true);
@@ -96,21 +102,22 @@ export default function ListsPage() {
     }
   }
 
-  async function handleRemoveItem(itemId: number | undefined, title: string) {
+  function handleRemoveItem(itemId: number | undefined, title: string) {
     if (!currentList || !itemId) return;
-    const confirmed = window.confirm(
-      `¿Quieres quitar "${title}" de esta lista?`,
-    );
-    if (!confirmed) return;
+    setRemoveTarget({ itemId, title });
+  }
 
+  async function confirmRemoveItem() {
+    if (!currentList || !removeTarget) return;
     const { data, error: apiError } = await removeListItem(
       currentList.id,
-      itemId,
+      removeTarget.itemId,
     );
     setError(apiError ?? null);
     if (data) {
       setCurrentList(data);
     }
+    setRemoveTarget(null);
   }
 
   if (!loading && !currentList) {
@@ -158,11 +165,14 @@ export default function ListsPage() {
 
           <div className="flex flex-wrap gap-2">
             {canManageInvites ? (
-              <Button variant="outline" size="sm" className="rounded-full" asChild>
-                <a href="#invite-panel">
-                  <LinkIcon className="size-4" />
-                  Invitar
-                </a>
+              <Button
+                variant="outline"
+                size="sm"
+                className="rounded-full"
+                onClick={() => setInviteOpen(true)}
+              >
+                <LinkIcon className="size-4" />
+                Invitar
               </Button>
             ) : null}
             <Button asChild size="sm" className="rounded-full">
@@ -220,13 +230,25 @@ export default function ListsPage() {
         <ListTabs active={tab} counts={counts} onChange={setTab} />
 
         {currentList ? (
-          <InvitePanel
+          <InviteModal
+            open={inviteOpen}
+            onOpenChange={setInviteOpen}
             canManage={canManageInvites}
             listId={currentList.id}
             listName={currentList.name}
-            panelId="invite-panel"
           />
         ) : null}
+
+        <ConfirmDialog
+          open={removeTarget !== null}
+          onOpenChange={(next) => {
+            if (!next) setRemoveTarget(null);
+          }}
+          title={`¿Quitar "${removeTarget?.title ?? ""}" de esta lista?`}
+          confirmLabel="Quitar"
+          cancelLabel="Cancelar"
+          onConfirm={confirmRemoveItem}
+        />
 
         {items.length === 0 ? (
           <div className="rounded-lg border bg-card p-4 text-sm text-muted-foreground">

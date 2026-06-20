@@ -165,8 +165,4 @@ git pull
 docker compose up -d --build
 ```
 
-TypeORM is configured with `synchronize: false`, so schema changes are never applied automatically. After pulling a version that includes new migrations, run them explicitly inside the backend container:
-
-```bash
-docker compose exec backend npx typeorm migration:run -d dist/db/data-source.js
-```
+TypeORM still runs with `synchronize: false`, but the backend now applies pending migrations automatically during startup. After pulling a version that includes new migrations, `docker compose up -d --build` is enough as long as the backend container starts successfully.

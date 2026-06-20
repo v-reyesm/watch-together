@@ -650,8 +650,7 @@ export function PosterGridCard({
           {item.title}
         </span>
         <span className="mt-1 block truncate text-xs text-muted-foreground">
-          {item.year} · {item.type === "serie" ? "Serie" : "Pelicula"} ·{" "}
-          {item.genre}
+          {item.year} · {item.meta}
         </span>
       </span>
       {watched ? (

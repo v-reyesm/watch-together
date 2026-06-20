@@ -13,6 +13,7 @@ import type { CurrentUserPayload } from '../auth/decorators/current-user.decorat
 import { AddListItemDto } from './dto/add-list-item.dto';
 import { CreateWatchListDto } from './dto/create-watch-list.dto';
 import { UpdateWatchListDto } from './dto/update-watch-list.dto';
+import { UpdateEpisodeProgressDto } from './dto/update-episode-progress.dto';
 import { WatchListService } from './watch-list.service';
 
 @Controller('watch-lists')
@@ -114,5 +115,29 @@ export class WatchListController {
     @Param('itemId', ParseIntPipe) itemId: number,
   ) {
     return this.watchListService.undoLatestWatch(currentUser.id, id, itemId);
+  }
+
+  @Get(':id/items/:itemId/episode-progress')
+  getEpisodeProgress(
+    @CurrentUser() currentUser: CurrentUserPayload,
+    @Param('id', ParseIntPipe) id: number,
+    @Param('itemId', ParseIntPipe) itemId: number,
+  ) {
+    return this.watchListService.getEpisodeProgress(currentUser.id, id, itemId);
+  }
+
+  @Patch(':id/items/:itemId/episode-progress')
+  updateEpisodeProgress(
+    @CurrentUser() currentUser: CurrentUserPayload,
+    @Param('id', ParseIntPipe) id: number,
+    @Param('itemId', ParseIntPipe) itemId: number,
+    @Body() dto: UpdateEpisodeProgressDto,
+  ) {
+    return this.watchListService.updateEpisodeProgress(
+      currentUser.id,
+      id,
+      itemId,
+      dto,
+    );
   }
 }

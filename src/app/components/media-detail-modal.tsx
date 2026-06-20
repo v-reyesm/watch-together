@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Dialog } from "radix-ui";
 import {
+  ClockIcon,
   FilmIcon,
   MonitorPlayIcon,
   StarIcon,
@@ -19,6 +20,7 @@ import type {
   ApiSearchResult,
   ApiWatchList,
 } from "@/lib/watch-api";
+import { formatRuntime } from "@/lib/format-runtime";
 
 function resultYear(result: ApiSearchResult): number | null {
   if (!result.releaseDate) return null;
@@ -184,7 +186,7 @@ export function MediaDetailModal({
                   </div>
                 ) : null}
 
-                {/* Streaming providers, director and main cast (from TMDB). */}
+                {/* Streaming providers, director, cast and runtime (from TMDB). */}
                 {detailsLoading ? (
                   <div className="flex flex-col gap-3">
                     <div className="h-4 w-40 animate-pulse rounded bg-muted" />
@@ -193,8 +195,48 @@ export function MediaDetailModal({
                 ) : details &&
                   (details.providers.length ||
                     details.director ||
-                    details.cast.length) ? (
+                    details.cast.length ||
+                    details.runtimeInMinutes ||
+                    details.numberOfSeasons) ? (
                   <dl className="flex flex-col gap-3 border-t pt-4 text-sm">
+                    {result.mediaType === "movie" &&
+                    details.runtimeInMinutes ? (
+                      <div className="flex items-center gap-2">
+                        <dt className="flex items-center gap-1.5 text-muted-foreground">
+                          <ClockIcon className="size-3.5" />
+                          Duración
+                        </dt>
+                        <dd className="font-medium text-foreground">
+                          {formatRuntime(details.runtimeInMinutes)}
+                        </dd>
+                      </div>
+                    ) : null}
+
+                    {result.mediaType === "tv" &&
+                    (details.numberOfSeasons ||
+                      details.numberOfEpisodes ||
+                      details.totalRuntimeInMinutes) ? (
+                      <div className="flex items-center gap-2">
+                        <dt className="flex items-center gap-1.5 text-muted-foreground">
+                          <TvIcon className="size-3.5" />
+                          Info
+                        </dt>
+                        <dd className="font-medium text-foreground">
+                          {[
+                            details.numberOfSeasons
+                              ? `${details.numberOfSeasons} temporada${details.numberOfSeasons !== 1 ? "s" : ""}`
+                              : null,
+                            details.numberOfEpisodes
+                              ? `${details.numberOfEpisodes} episodios`
+                              : null,
+                            formatRuntime(details.totalRuntimeInMinutes),
+                          ]
+                            .filter(Boolean)
+                            .join(" · ")}
+                        </dd>
+                      </div>
+                    ) : null}
+
                     {details.providers.length ? (
                       <div className="flex flex-col gap-1.5">
                         <dt className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">

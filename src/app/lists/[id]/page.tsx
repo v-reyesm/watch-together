@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { InvitePanel } from "@/components/invite-panel";
+import { EpisodeProgressPanel } from "@/components/episode-progress-panel";
 import {
   ListTabs,
   MemberStack,
@@ -435,11 +436,20 @@ export default function ListDetailPage() {
         ) : visibleItems.length ? (
           <section className="grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5">
             {visibleItems.map((item) => (
-              <PosterGridCard
-                key={item.id}
-                item={item}
-                onMarkWatched={handleToggleWatched}
-              />
+              <div key={item.id} className="flex min-w-0 flex-col gap-2">
+                <PosterGridCard
+                  item={item}
+                  onMarkWatched={handleToggleWatched}
+                />
+                {item.type === "serie" && item.numericId ? (
+                  <EpisodeProgressPanel
+                    listId={listId}
+                    mediaId={item.numericId}
+                    mediaType="tv"
+                    tmdbId={item.providerId ?? null}
+                  />
+                ) : null}
+              </div>
             ))}
           </section>
         ) : (

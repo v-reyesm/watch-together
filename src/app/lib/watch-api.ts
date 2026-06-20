@@ -101,6 +101,10 @@ export type ApiSearchResult = {
   originalLanguage: string;
   rating: number;
   mediaType: ApiMediaType;
+  runtimeInMinutes?: number | null;
+  numberOfSeasons?: number | null;
+  numberOfEpisodes?: number | null;
+  totalRuntimeInMinutes?: number | null;
 };
 
 export type ApiMediaDetails = {
@@ -110,6 +114,14 @@ export type ApiMediaDetails = {
   director: string | null;
   /** Top billed cast member names. */
   cast: string[];
+  /** Runtime in minutes (movies only). */
+  runtimeInMinutes?: number | null;
+  /** Number of seasons (TV only). */
+  numberOfSeasons?: number | null;
+  /** Number of episodes (TV only). */
+  numberOfEpisodes?: number | null;
+  /** Approximate total runtime in minutes (TV only). */
+  totalRuntimeInMinutes?: number | null;
 };
 
 export type AddListItemInput = {
@@ -319,6 +331,32 @@ export type ApiWatchHistoryResponse = {
   offset: number;
   items: ApiWatchHistoryItem[];
 };
+
+export type ApiEpisodeProgress = {
+  watchListId: number;
+  mediaId: number;
+  watchedEpisodes: number;
+  watchedSeasons: number;
+};
+
+export function getEpisodeProgress(listId: number, itemId: number) {
+  return apiFetch<ApiEpisodeProgress>(
+    `/api/watch-lists/${listId}/items/${itemId}/episode-progress`,
+  );
+}
+
+export function updateEpisodeProgress(
+  listId: number,
+  itemId: number,
+  watchedEpisodes: number,
+) {
+  return mutate(
+    apiFetch<ApiEpisodeProgress>(
+      `/api/watch-lists/${listId}/items/${itemId}/episode-progress`,
+      { method: "PATCH", body: { watchedEpisodes } },
+    ),
+  );
+}
 
 export function getWatchHistory(limit = 20, offset = 0) {
   const params = new URLSearchParams({

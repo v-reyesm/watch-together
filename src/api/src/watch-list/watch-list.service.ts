@@ -9,6 +9,8 @@ import { Repository } from 'typeorm';
 import { AddListItemDto } from './dto/add-list-item.dto';
 import { CreateWatchListDto } from './dto/create-watch-list.dto';
 import { UpdateWatchListDto } from './dto/update-watch-list.dto';
+import { UpdateEpisodeProgressDto } from './dto/update-episode-progress.dto';
+import { EpisodeProgress } from './entities/episode-progress.entity';
 import { WatchEvent } from './entities/watch-event.entity';
 import { WatchListMember } from './entities/watch-list-member.entity';
 import { WatchList } from './entities/watch-list.entity';
@@ -46,6 +48,8 @@ export class WatchListService {
     private readonly watchEventRepo: Repository<WatchEvent>,
     @InjectRepository(Media)
     private readonly mediaRepo: Repository<Media>,
+    @InjectRepository(EpisodeProgress)
+    private readonly episodeProgressRepo: Repository<EpisodeProgress>,
     @InjectRepository(User)
     private readonly userRepo: Repository<User>,
   ) {}
@@ -234,6 +238,58 @@ export class WatchListService {
 
     await this.memberRepo.remove(membership);
     return this.findOne(userId, listId);
+  }
+
+  async getEpisodeProgress(userId: number, listId: number, itemId: number) {
+    await this.getAuthorizedList(userId, listId);
+    const progress = await this.episodeProgressRepo.findOneBy({
+      watchListId: listId,
+      mediaId: itemId,
+    });
+    return {
+      watchListId: listId,
+      mediaId: itemId,
+      watchedEpisodes: progress?.watchedEpisodes ?? 0,
+      watchedSeasons: progress?.watchedSeasons ?? 0,
+    };
+  }
+
+  async updateEpisodeProgress(
+    userId: number,
+    listId: number,
+    itemId: number,
+    dto: UpdateEpisodeProgressDto,
+  ) {
+    const list = await this.getAuthorizedList(userId, listId);
+    const media = list.items.find((item) => item.id === itemId);
+    if (!media) {
+      throw new NotFoundException('Titulo no encontrado en esta lista');
+    }
+
+    let progress = await this.episodeProgressRepo.findOneBy({
+      watchListId: listId,
+      mediaId: itemId,
+    });
+
+    if (progress) {
+      progress.watchedEpisodes = dto.watchedEpisodes;
+    } else {
+      progress = this.episodeProgressRepo.create({
+        watchListId: listId,
+        mediaId: itemId,
+        watchedEpisodes: dto.watchedEpisodes,
+        watchedSeasons: 0,
+      });
+    }
+
+    await this.episodeProgressRepo.save(progress);
+
+    return {
+      watchListId: listId,
+      mediaId: itemId,
+      watchedEpisodes: progress.watchedEpisodes,
+      watchedSeasons: progress.watchedSeasons,
+    };
   }
 
   async leave(userId: number, listId: number) {

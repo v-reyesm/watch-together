@@ -132,9 +132,11 @@ export default function SearchPage() {
     });
   }, []);
 
-  // Reset detail-dependent filters when the result set changes.
+  // Reset detail-dependent filters and loading state when the result set changes
+  // so a new search starts clean and any in-flight fetch is treated as stale.
   useEffect(() => {
     setDetailsCache({});
+    setDetailsLoading(false);
     setYearFilter(null);
     setActorFilter(null);
     setProviderFilter(null);
@@ -155,6 +157,11 @@ export default function SearchPage() {
         return { key: itemKey, data };
       }),
     );
+
+    // Guard against stale responses: if results changed while we were
+    // fetching, the [results] effect already reset the ref. Bail out so we
+    // don't overwrite the cache with data from a previous search.
+    if (detailsFetchedForRef.current !== key) return;
 
     const cache: Record<string, ApiMediaDetails> = {};
     for (const entry of entries) {

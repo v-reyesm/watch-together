@@ -17,7 +17,6 @@ function makeItem(overrides: Partial<WatchItem> = {}): WatchItem {
     year: 2023,
     type: "pelicula",
     meta: "Película · ★ 7.8",
-    genre: "Película",
     rating: 7.8,
     status: "pending",
     poster: { bg: "#3a4655", ink: "#f0e6cf", accent: "#d9a05a" },
@@ -36,7 +35,7 @@ describe("PosterGridCard", () => {
   });
 
   it("does not show the type twice (regression)", () => {
-    const item = makeItem({ type: "serie", meta: "Serie · ★ 8.1", genre: "Serie" });
+    const item = makeItem({ type: "serie", meta: "Serie · ★ 8.1" });
     render(<PosterGridCard item={item} />);
 
     // "Serie" should appear in the subtitle exactly once, combined with year and rating

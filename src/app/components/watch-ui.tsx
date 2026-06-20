@@ -34,7 +34,6 @@ export type WatchItem = {
   year: number;
   type: "pelicula" | "serie";
   meta: string;
-  genre: string;
   rating?: number;
   status: "pending" | "watchedTogether" | "watchedAlone";
   poster: Poster;
@@ -66,7 +65,6 @@ export const sampleItems: WatchItem[] = [
     status: "pending",
     poster: { bg: "#3a4655", ink: "#f0e6cf", accent: "#d9a05a" },
     votes: { me: "muchas", partner: "muchas" },
-    genre: "Drama",
   },
   {
     id: "the-bear",
@@ -77,7 +75,6 @@ export const sampleItems: WatchItem[] = [
     status: "pending",
     poster: { bg: "#1d1d1f", ink: "#e9e3d3", accent: "#d35427" },
     votes: { me: "muchas", partner: "late" },
-    genre: "Drama",
   },
   {
     id: "severance",
@@ -88,7 +85,6 @@ export const sampleItems: WatchItem[] = [
     status: "pending",
     poster: { bg: "#0d2436", ink: "#cfe4f0", accent: "#3aa0d9" },
     votes: { me: "late", partner: null },
-    genre: "Sci-Fi",
   },
   {
     id: "fleabag",
@@ -99,7 +95,6 @@ export const sampleItems: WatchItem[] = [
     status: "watchedTogether",
     poster: { bg: "#a83a3a", ink: "#f0e6cf", accent: "#1a1a1a" },
     votes: { me: "muchas", partner: "muchas" },
-    genre: "Comedia",
   },
   {
     id: "marriage-story",
@@ -110,7 +105,6 @@ export const sampleItems: WatchItem[] = [
     status: "watchedAlone",
     poster: { bg: "#f0ebe0", ink: "#1a1a1a", accent: "#a83a3a" },
     votes: { me: "muchas", partner: null },
-    genre: "Drama",
   },
 ];
 

@@ -28,8 +28,8 @@ jest.mock("@/lib/auth", () => ({
   }),
 }));
 
-jest.mock("@/components/invite-panel", () => ({
-  InvitePanel: () => <div data-testid="invite-panel" />,
+jest.mock("@/components/invite-modal", () => ({
+  InviteModal: () => <div data-testid="invite-modal" />,
 }));
 
 jest.mock("@/lib/watch-api", () => ({
@@ -116,10 +116,7 @@ describe("ListDetailPage", () => {
     ).toBeInTheDocument();
     expect(screen.getByText("Películas para dos")).toBeInTheDocument();
     expect(screen.getByText("Esta lista aún no tiene títulos. Agrega uno desde búsqueda.")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /invitar/i })).toHaveAttribute(
-      "href",
-      "#invite-panel",
-    );
+    expect(screen.getByRole("button", { name: /invitar/i })).toBeInTheDocument();
   });
 
   it("points the add button at search pre-selecting the current list", async () => {

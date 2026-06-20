@@ -25,6 +25,7 @@ import { JwtStrategy } from '../src/auth/strategies/jwt.strategy';
 import { GlobalJwtAuthGuard } from '../src/auth/guards/global-jwt-auth.guard';
 import { Media } from '../src/media/entities/media.entity';
 import { User } from '../src/users/entities/user.entity';
+import { EpisodeProgress } from '../src/watch-list/entities/episode-progress.entity';
 import { WatchEvent } from '../src/watch-list/entities/watch-event.entity';
 import { WatchListMember } from '../src/watch-list/entities/watch-list-member.entity';
 import { WatchList } from '../src/watch-list/entities/watch-list.entity';
@@ -256,6 +257,37 @@ class TestInvite {
   createdAt: Date;
 }
 
+@Entity({ name: 'episode_progress' })
+@Unique(['watchListId', 'mediaId'])
+class TestEpisodeProgress {
+  @PrimaryGeneratedColumn()
+  id: number;
+
+  @Column()
+  watchListId: number;
+
+  @ManyToOne(() => TestWatchList, { onDelete: 'CASCADE' })
+  watchList: TestWatchList;
+
+  @Column()
+  mediaId: number;
+
+  @ManyToOne(() => TestMedia, { onDelete: 'CASCADE' })
+  media: TestMedia;
+
+  @Column({ type: 'int', default: 0 })
+  watchedEpisodes: number;
+
+  @Column({ type: 'int', default: 0 })
+  watchedSeasons: number;
+
+  @CreateDateColumn()
+  createdAt: Date;
+
+  @UpdateDateColumn()
+  updatedAt: Date;
+}
+
 describe('Watch lists (e2e)', () => {
   let app: INestApplication;
   let jwtService: JwtService;
@@ -290,6 +322,7 @@ describe('Watch lists (e2e)', () => {
             TestWatchListMember,
             TestWatchEvent,
             TestInvite,
+            TestEpisodeProgress,
           ],
           synchronize: true,
         }),
@@ -301,6 +334,7 @@ describe('Watch lists (e2e)', () => {
           TestWatchListMember,
           TestWatchEvent,
           TestInvite,
+          TestEpisodeProgress,
         ]),
         PassportModule.register({ defaultStrategy: 'jwt' }),
         JwtModule.register({
@@ -336,6 +370,10 @@ describe('Watch lists (e2e)', () => {
         {
           provide: getRepositoryToken(Invite),
           useExisting: getRepositoryToken(TestInvite),
+        },
+        {
+          provide: getRepositoryToken(EpisodeProgress),
+          useExisting: getRepositoryToken(TestEpisodeProgress),
         },
         {
           provide: APP_GUARD,

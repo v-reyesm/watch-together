@@ -13,7 +13,7 @@ import {
   Trash2Icon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { InvitePanel } from "@/components/invite-panel";
+import { InviteModal } from "@/components/invite-modal";
 import { EpisodeProgressPanel } from "@/components/episode-progress-panel";
 import {
   ListTabs,
@@ -50,6 +50,7 @@ export default function ListDetailPage() {
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [confirmingLeave, setConfirmingLeave] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [inviteOpen, setInviteOpen] = useState(false);
 
   async function loadList() {
     if (!Number.isFinite(listId) || listId <= 0) {
@@ -339,12 +340,10 @@ export default function ListDetailPage() {
                 variant="outline"
                 size="sm"
                 className="rounded-full"
-                asChild
+                onClick={() => setInviteOpen(true)}
               >
-                <a href="#invite-panel">
-                  <LinkIcon className="size-4" />
-                  Invitar
-                </a>
+                <LinkIcon className="size-4" />
+                Invitar
               </Button>
             ) : null}
             <Button asChild size="sm" className="rounded-full">
@@ -422,11 +421,12 @@ export default function ListDetailPage() {
 
         <ListTabs active={tab} counts={counts} onChange={setTab} />
 
-        <InvitePanel
+        <InviteModal
+          open={inviteOpen}
+          onOpenChange={setInviteOpen}
           canManage={canManageInvites}
           listId={list.id}
           listName={list.name}
-          panelId="invite-panel"
         />
 
         {items.length === 0 ? (

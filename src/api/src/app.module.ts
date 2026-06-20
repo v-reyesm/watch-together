@@ -27,6 +27,7 @@ import { validateEnv } from './config/env.validation';
     TypeOrmModule.forRoot({
       ...AppDataSource.options,
       autoLoadEntities: true,
+      migrationsRun: true,
     }),
     ThrottlerModule.forRoot([
       {

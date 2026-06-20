@@ -23,8 +23,8 @@ jest.mock("@/lib/auth", () => ({
   }),
 }));
 
-jest.mock("@/components/invite-panel", () => ({
-  InvitePanel: () => <div data-testid="invite-panel" />,
+jest.mock("@/components/invite-modal", () => ({
+  InviteModal: () => <div data-testid="invite-modal" />,
 }));
 
 jest.mock("@/lib/watch-api", () => ({
@@ -78,7 +78,6 @@ describe("ListsPage item actions", () => {
   beforeEach(() => {
     originalClipboardDescriptor = Object.getOwnPropertyDescriptor(navigator, "clipboard");
     jest.clearAllMocks();
-    jest.spyOn(window, "confirm").mockReturnValue(true);
     (getWatchLists as jest.Mock).mockResolvedValue({
       data: [baseList],
       status: 200,
@@ -99,7 +98,7 @@ describe("ListsPage item actions", () => {
     Reflect.deleteProperty(navigator as object, "clipboard");
   });
 
-  it("removes an item after confirmation", async () => {
+  it("removes an item after confirming in the dialog", async () => {
     (removeListItem as jest.Mock).mockResolvedValue({
       data: { ...baseList, itemCount: 0, pendingCount: 0, watchedCount: 0, items: [] },
       status: 200,
@@ -110,9 +109,29 @@ describe("ListsPage item actions", () => {
     await screen.findByRole("heading", { name: "Noches de viernes" });
     fireEvent.click(screen.getByRole("button", { name: /quitar/i }));
 
-    await waitFor(() => expect(window.confirm).toHaveBeenCalled());
-    expect(removeListItem).toHaveBeenCalledWith(5, 10);
+    // The confirmation dialog should appear with the title name in its heading
+    const dialogTitle = await screen.findByRole("heading", {
+      name: /Quitar.*Past Lives/,
+    });
+    expect(dialogTitle).toBeInTheDocument();
+    const confirmButton = screen.getByRole("button", { name: "Quitar" });
+    fireEvent.click(confirmButton);
+
+    await waitFor(() => expect(removeListItem).toHaveBeenCalledWith(5, 10));
     expect(await screen.findByText("0 vistas")).toBeInTheDocument();
+  });
+
+  it("does not remove an item when the dialog is cancelled", async () => {
+    render(<ListsPage />);
+
+    await screen.findByRole("heading", { name: "Noches de viernes" });
+    fireEvent.click(screen.getByRole("button", { name: /quitar/i }));
+
+    // The confirmation dialog should appear; click Cancel
+    const cancelButton = await screen.findByRole("button", { name: "Cancelar" });
+    fireEvent.click(cancelButton);
+
+    expect(removeListItem).not.toHaveBeenCalled();
   });
 
   it("undoes the latest watch event for watched items", async () => {
@@ -135,14 +154,11 @@ describe("ListsPage item actions", () => {
     expect(await screen.findByText("1 pendientes")).toBeInTheDocument();
   });
 
-  it("shows the invite management section for owners", async () => {
+  it("shows the invite button for owners that opens a modal", async () => {
     render(<ListsPage />);
 
     await screen.findByRole("heading", { name: "Noches de viernes" });
-    expect(screen.getByRole("link", { name: /invitar/i })).toHaveAttribute(
-      "href",
-      "#invite-panel",
-    );
-    expect(screen.getByTestId("invite-panel")).toBeInTheDocument();
+    const inviteButton = screen.getByRole("button", { name: /invitar/i });
+    expect(inviteButton).toBeInTheDocument();
   });
 });

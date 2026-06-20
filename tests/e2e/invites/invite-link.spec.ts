@@ -98,7 +98,7 @@ test.describe("invite links", () => {
     await expect(
       page.getByRole("heading", { name: "Noches de viernes" }),
     ).toBeVisible();
-    await page.getByRole("link", { name: "Invitar" }).click();
+    await page.getByRole("button", { name: "Invitar" }).click();
     await page.getByRole("button", { name: "Crear invitación" }).click();
 
     await expect.poll(() => inviteCreated).toBe(true);
@@ -169,6 +169,7 @@ test.describe("invite links", () => {
 
     await page.goto("/lists?list=5");
 
+    await page.getByRole("button", { name: "Invitar" }).click();
     await expect(page.getByText("Activa")).toBeVisible();
     await page.getByRole("button", { name: "Revocar" }).click();
 

@@ -7,6 +7,8 @@ import { WatchListMember } from './entities/watch-list-member.entity';
 import { WatchEvent } from './entities/watch-event.entity';
 import { EpisodeProgress } from './entities/episode-progress.entity';
 import { Media } from '../media/entities/media.entity';
+import { Movie } from '../movies/entities/movie.entity';
+import { TvSerie } from '../tv-series/entities/tv-serie.entity';
 import { User } from '../users/entities/user.entity';
 
 @Module({
@@ -17,6 +19,8 @@ import { User } from '../users/entities/user.entity';
       WatchEvent,
       EpisodeProgress,
       Media,
+      Movie,
+      TvSerie,
       User,
     ]),
   ],

@@ -9,15 +9,10 @@ import { EpisodeProgressPanel } from "./episode-progress-panel";
 
 jest.mock("@/lib/watch-api", () => ({
   getEpisodeProgress: jest.fn(),
-  getMediaDetails: jest.fn(),
   updateEpisodeProgress: jest.fn(),
 }));
 
-import {
-  getEpisodeProgress,
-  getMediaDetails,
-  updateEpisodeProgress,
-} from "@/lib/watch-api";
+import { getEpisodeProgress, updateEpisodeProgress } from "@/lib/watch-api";
 
 describe("EpisodeProgressPanel", () => {
   beforeEach(() => {
@@ -28,43 +23,28 @@ describe("EpisodeProgressPanel", () => {
     (getEpisodeProgress as jest.Mock).mockResolvedValue({
       data: { watchListId: 1, mediaId: 10, watchedEpisodes: 0, watchedSeasons: 0 },
     });
-    (getMediaDetails as jest.Mock).mockResolvedValue({ data: null });
 
     const { container } = render(
-      <EpisodeProgressPanel
-        listId={1}
-        mediaId={10}
-        mediaType="movie"
-        tmdbId={100}
-      />,
+      <EpisodeProgressPanel listId={1} mediaId={10} mediaType="movie" />,
     );
 
     expect(container.innerHTML).toBe("");
   });
 
-  it("shows the episode counter with loaded progress", async () => {
+  it("shows the episode counter with loaded progress and series totals", async () => {
     (getEpisodeProgress as jest.Mock).mockResolvedValue({
-      data: { watchListId: 1, mediaId: 10, watchedEpisodes: 5, watchedSeasons: 1 },
-    });
-    (getMediaDetails as jest.Mock).mockResolvedValue({
       data: {
-        providers: [],
-        director: null,
-        cast: [],
+        watchListId: 1,
+        mediaId: 10,
+        watchedEpisodes: 5,
+        watchedSeasons: 1,
         numberOfSeasons: 3,
         numberOfEpisodes: 24,
         totalRuntimeInMinutes: 1080,
       },
     });
 
-    render(
-      <EpisodeProgressPanel
-        listId={1}
-        mediaId={10}
-        mediaType="tv"
-        tmdbId={100}
-      />,
-    );
+    render(<EpisodeProgressPanel listId={1} mediaId={10} mediaType="tv" />);
 
     await waitFor(() => {
       expect(screen.getByText("5/24")).toBeInTheDocument();
@@ -77,13 +57,11 @@ describe("EpisodeProgressPanel", () => {
   it("increments the counter on plus button click", async () => {
     const user = userEvent.setup();
     (getEpisodeProgress as jest.Mock).mockResolvedValue({
-      data: { watchListId: 1, mediaId: 10, watchedEpisodes: 3, watchedSeasons: 0 },
-    });
-    (getMediaDetails as jest.Mock).mockResolvedValue({
       data: {
-        providers: [],
-        director: null,
-        cast: [],
+        watchListId: 1,
+        mediaId: 10,
+        watchedEpisodes: 3,
+        watchedSeasons: 0,
         numberOfSeasons: 1,
         numberOfEpisodes: 10,
         totalRuntimeInMinutes: 450,
@@ -93,14 +71,7 @@ describe("EpisodeProgressPanel", () => {
       data: { watchListId: 1, mediaId: 10, watchedEpisodes: 4, watchedSeasons: 0 },
     });
 
-    render(
-      <EpisodeProgressPanel
-        listId={1}
-        mediaId={10}
-        mediaType="tv"
-        tmdbId={100}
-      />,
-    );
+    render(<EpisodeProgressPanel listId={1} mediaId={10} mediaType="tv" />);
 
     await waitFor(() => {
       expect(screen.getByText("3/10")).toBeInTheDocument();
@@ -117,13 +88,11 @@ describe("EpisodeProgressPanel", () => {
   it("decrements the counter on minus button click", async () => {
     const user = userEvent.setup();
     (getEpisodeProgress as jest.Mock).mockResolvedValue({
-      data: { watchListId: 1, mediaId: 10, watchedEpisodes: 2, watchedSeasons: 0 },
-    });
-    (getMediaDetails as jest.Mock).mockResolvedValue({
       data: {
-        providers: [],
-        director: null,
-        cast: [],
+        watchListId: 1,
+        mediaId: 10,
+        watchedEpisodes: 2,
+        watchedSeasons: 0,
         numberOfEpisodes: 10,
         totalRuntimeInMinutes: 450,
       },
@@ -132,14 +101,7 @@ describe("EpisodeProgressPanel", () => {
       data: { watchListId: 1, mediaId: 10, watchedEpisodes: 1, watchedSeasons: 0 },
     });
 
-    render(
-      <EpisodeProgressPanel
-        listId={1}
-        mediaId={10}
-        mediaType="tv"
-        tmdbId={100}
-      />,
-    );
+    render(<EpisodeProgressPanel listId={1} mediaId={10} mediaType="tv" />);
 
     await waitFor(() => {
       expect(screen.getByText("2/10")).toBeInTheDocument();
@@ -154,47 +116,30 @@ describe("EpisodeProgressPanel", () => {
 
   it("shows completed message when all episodes are watched", async () => {
     (getEpisodeProgress as jest.Mock).mockResolvedValue({
-      data: { watchListId: 1, mediaId: 10, watchedEpisodes: 10, watchedSeasons: 0 },
-    });
-    (getMediaDetails as jest.Mock).mockResolvedValue({
       data: {
-        providers: [],
-        director: null,
-        cast: [],
+        watchListId: 1,
+        mediaId: 10,
+        watchedEpisodes: 10,
+        watchedSeasons: 0,
         numberOfSeasons: 1,
         numberOfEpisodes: 10,
         totalRuntimeInMinutes: 450,
       },
     });
 
-    render(
-      <EpisodeProgressPanel
-        listId={1}
-        mediaId={10}
-        mediaType="tv"
-        tmdbId={100}
-      />,
-    );
+    render(<EpisodeProgressPanel listId={1} mediaId={10} mediaType="tv" />);
 
     await waitFor(() => {
       expect(screen.getByText("Serie completada")).toBeInTheDocument();
     });
   });
 
-  it("handles missing TMDB details gracefully", async () => {
+  it("handles missing series totals gracefully", async () => {
     (getEpisodeProgress as jest.Mock).mockResolvedValue({
       data: { watchListId: 1, mediaId: 10, watchedEpisodes: 3, watchedSeasons: 0 },
     });
-    (getMediaDetails as jest.Mock).mockResolvedValue({ data: null });
 
-    render(
-      <EpisodeProgressPanel
-        listId={1}
-        mediaId={10}
-        mediaType="tv"
-        tmdbId={null}
-      />,
-    );
+    render(<EpisodeProgressPanel listId={1} mediaId={10} mediaType="tv" />);
 
     await waitFor(() => {
       expect(screen.getByText("3")).toBeInTheDocument();
@@ -207,16 +152,8 @@ describe("EpisodeProgressPanel", () => {
     (getEpisodeProgress as jest.Mock).mockResolvedValue({
       data: { watchListId: 1, mediaId: 10, watchedEpisodes: 0, watchedSeasons: 0 },
     });
-    (getMediaDetails as jest.Mock).mockResolvedValue({ data: null });
 
-    render(
-      <EpisodeProgressPanel
-        listId={1}
-        mediaId={10}
-        mediaType="tv"
-        tmdbId={null}
-      />,
-    );
+    render(<EpisodeProgressPanel listId={1} mediaId={10} mediaType="tv" />);
 
     await waitFor(() => {
       expect(screen.getByLabelText("Restar episodio")).toBeDisabled();

@@ -337,6 +337,9 @@ export type ApiEpisodeProgress = {
   mediaId: number;
   watchedEpisodes: number;
   watchedSeasons: number;
+  numberOfSeasons?: number | null;
+  numberOfEpisodes?: number | null;
+  totalRuntimeInMinutes?: number | null;
 };
 
 export function getEpisodeProgress(listId: number, itemId: number) {

@@ -446,7 +446,6 @@ export default function ListDetailPage() {
                     listId={listId}
                     mediaId={item.numericId}
                     mediaType="tv"
-                    tmdbId={item.providerId ?? null}
                   />
                 ) : null}
               </div>

@@ -24,6 +24,8 @@ import { GlobalExceptionFilter } from '../src/common/filters/http-exception.filt
 import { JwtStrategy } from '../src/auth/strategies/jwt.strategy';
 import { GlobalJwtAuthGuard } from '../src/auth/guards/global-jwt-auth.guard';
 import { Media } from '../src/media/entities/media.entity';
+import { Movie } from '../src/movies/entities/movie.entity';
+import { TvSerie } from '../src/tv-series/entities/tv-serie.entity';
 import { User } from '../src/users/entities/user.entity';
 import { EpisodeProgress } from '../src/watch-list/entities/episode-progress.entity';
 import { WatchEvent } from '../src/watch-list/entities/watch-event.entity';
@@ -135,6 +137,102 @@ class TestMedia {
 
   @UpdateDateColumn()
   updatedAt: Date;
+}
+
+@Entity({ name: 'movies' })
+class TestMovie {
+  @PrimaryGeneratedColumn()
+  id: number;
+
+  @Column()
+  title: string;
+
+  @Column({ default: '' })
+  translatedTitle: string;
+
+  @Column({ type: 'datetime', nullable: true })
+  releaseDate: Date;
+
+  @Column({ default: '' })
+  posterUrl: string;
+
+  @Column({ default: '' })
+  overview: string;
+
+  @Column({ nullable: true })
+  originalLanguage?: string;
+
+  @Column({ type: 'float', nullable: true })
+  rating?: number;
+
+  @Column({ nullable: true })
+  tmdbId?: number;
+
+  @Column({ type: 'varchar', length: 30, default: 'tmdb' })
+  providerName: 'tmdb';
+
+  @Column({ nullable: true })
+  providerId?: number;
+
+  @Column({ type: 'varchar', length: 20, default: 'movie' })
+  mediaType: 'movie' | 'tv';
+
+  @Column({ nullable: true })
+  director?: string;
+
+  @Column({ nullable: true })
+  runtimeInMinutes?: number;
+}
+
+@Entity({ name: 'tv_series' })
+class TestTvSerie {
+  @PrimaryGeneratedColumn()
+  id: number;
+
+  @Column()
+  title: string;
+
+  @Column({ default: '' })
+  translatedTitle: string;
+
+  @Column({ type: 'datetime', nullable: true })
+  releaseDate: Date;
+
+  @Column({ default: '' })
+  posterUrl: string;
+
+  @Column({ default: '' })
+  overview: string;
+
+  @Column({ nullable: true })
+  originalLanguage?: string;
+
+  @Column({ type: 'float', nullable: true })
+  rating?: number;
+
+  @Column({ nullable: true })
+  tmdbId?: number;
+
+  @Column({ type: 'varchar', length: 30, default: 'tmdb' })
+  providerName: 'tmdb';
+
+  @Column({ nullable: true })
+  providerId?: number;
+
+  @Column({ type: 'varchar', length: 20, default: 'tv' })
+  mediaType: 'movie' | 'tv';
+
+  @Column({ nullable: true })
+  numberOfSeasons?: number;
+
+  @Column({ nullable: true })
+  numberOfEpisodes?: number;
+
+  @Column({ nullable: true })
+  totalRuntimeInMinutes?: number;
+
+  @Column({ nullable: true })
+  status?: string;
 }
 
 @Entity({ name: 'genres' })
@@ -318,6 +416,8 @@ describe('Watch lists (e2e)', () => {
             TestUser,
             TestGenre,
             TestMedia,
+            TestMovie,
+            TestTvSerie,
             TestWatchList,
             TestWatchListMember,
             TestWatchEvent,
@@ -330,6 +430,8 @@ describe('Watch lists (e2e)', () => {
           TestUser,
           TestGenre,
           TestMedia,
+          TestMovie,
+          TestTvSerie,
           TestWatchList,
           TestWatchListMember,
           TestWatchEvent,
@@ -354,6 +456,14 @@ describe('Watch lists (e2e)', () => {
         {
           provide: getRepositoryToken(Media),
           useExisting: getRepositoryToken(TestMedia),
+        },
+        {
+          provide: getRepositoryToken(Movie),
+          useExisting: getRepositoryToken(TestMovie),
+        },
+        {
+          provide: getRepositoryToken(TvSerie),
+          useExisting: getRepositoryToken(TestTvSerie),
         },
         {
           provide: getRepositoryToken(WatchList),
@@ -669,6 +779,64 @@ describe('Watch lists (e2e)', () => {
       status: 'pending',
       watchedAt: null,
     });
+  });
+
+  it('shares episode progress across list members and forbids non-members', async () => {
+    const { listId, itemId } = await createListWithItem('Lista con progreso');
+
+    // Owner sets the shared counter via PATCH.
+    const patchRes = await request(app.getHttpServer())
+      .patch(`/api/watch-lists/${listId}/items/${itemId}/episode-progress`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ watchedEpisodes: 4 })
+      .expect(200);
+    expect(patchRes.body).toMatchObject({
+      watchListId: listId,
+      mediaId: itemId,
+      watchedEpisodes: 4,
+    });
+
+    // It persists: reading it back returns the same value.
+    const ownerGet = await request(app.getHttpServer())
+      .get(`/api/watch-lists/${listId}/items/${itemId}/episode-progress`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+    expect(ownerGet.body).toMatchObject({ watchedEpisodes: 4 });
+
+    // A non-member cannot read the progress.
+    await request(app.getHttpServer())
+      .get(`/api/watch-lists/${listId}/items/${itemId}/episode-progress`)
+      .set('Authorization', `Bearer ${otherToken}`)
+      .expect(403);
+
+    // The other user joins the list via an invite.
+    const inviteRes = await request(app.getHttpServer())
+      .post(`/api/watch-lists/${listId}/invites`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(201);
+    await request(app.getHttpServer())
+      .post(`/api/invites/${inviteRes.body.token}/join`)
+      .set('Authorization', `Bearer ${otherToken}`)
+      .expect(201);
+
+    // The member sees the same shared counter the owner set.
+    const memberGet = await request(app.getHttpServer())
+      .get(`/api/watch-lists/${listId}/items/${itemId}/episode-progress`)
+      .set('Authorization', `Bearer ${otherToken}`)
+      .expect(200);
+    expect(memberGet.body).toMatchObject({ watchedEpisodes: 4 });
+
+    // An update by the member is shared back to the owner.
+    await request(app.getHttpServer())
+      .patch(`/api/watch-lists/${listId}/items/${itemId}/episode-progress`)
+      .set('Authorization', `Bearer ${otherToken}`)
+      .send({ watchedEpisodes: 7 })
+      .expect(200);
+    const ownerGetAfter = await request(app.getHttpServer())
+      .get(`/api/watch-lists/${listId}/items/${itemId}/episode-progress`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+    expect(ownerGetAfter.body).toMatchObject({ watchedEpisodes: 7 });
   });
 
   it('lets the owner remove a member and a member leave the list', async () => {

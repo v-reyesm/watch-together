@@ -3,47 +3,41 @@
 import { useCallback, useEffect, useState } from "react";
 import { MinusIcon, PlusIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  getEpisodeProgress,
-  getMediaDetails,
-  updateEpisodeProgress,
-} from "@/lib/watch-api";
-import type { ApiMediaDetails, ApiMediaType } from "@/lib/watch-api";
+import { getEpisodeProgress, updateEpisodeProgress } from "@/lib/watch-api";
+import type { ApiMediaType } from "@/lib/watch-api";
 import { formatRuntime } from "@/lib/format-runtime";
 
 export function EpisodeProgressPanel({
   listId,
   mediaId,
   mediaType,
-  tmdbId,
 }: {
   listId: number;
   mediaId: number;
   mediaType: ApiMediaType;
-  tmdbId: number | null;
 }) {
   const [watchedEpisodes, setWatchedEpisodes] = useState(0);
   const [saving, setSaving] = useState(false);
-  const [details, setDetails] = useState<ApiMediaDetails | null>(null);
+  const [totalEpisodes, setTotalEpisodes] = useState<number | null>(null);
+  const [totalSeasons, setTotalSeasons] = useState<number | null>(null);
+  const [totalRuntime, setTotalRuntime] = useState<number | null>(null);
 
+  // A single request returns both the shared progress counter and the series
+  // totals (from the persisted tv_series columns), so the list page no longer
+  // fires a per-card getMediaDetails TMDB call.
   useEffect(() => {
     getEpisodeProgress(listId, mediaId).then(({ data }) => {
-      if (data) setWatchedEpisodes(data.watchedEpisodes);
+      if (!data) return;
+      setWatchedEpisodes(data.watchedEpisodes);
+      setTotalEpisodes(data.numberOfEpisodes ?? null);
+      setTotalSeasons(data.numberOfSeasons ?? null);
+      setTotalRuntime(data.totalRuntimeInMinutes ?? null);
     });
   }, [listId, mediaId]);
 
-  useEffect(() => {
-    if (tmdbId == null) return;
-    getMediaDetails(tmdbId, mediaType).then(({ data }) => {
-      if (data) setDetails(data);
-    });
-  }, [tmdbId, mediaType]);
-
-  const totalEpisodes = details?.numberOfEpisodes ?? null;
-  const totalSeasons = details?.numberOfSeasons ?? null;
   const episodeRuntime =
-    totalEpisodes && details?.totalRuntimeInMinutes
-      ? Math.round(details.totalRuntimeInMinutes / totalEpisodes)
+    totalEpisodes && totalRuntime
+      ? Math.round(totalRuntime / totalEpisodes)
       : null;
 
   const remainingEpisodes =

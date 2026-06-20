@@ -166,8 +166,10 @@ test.describe("list item actions", () => {
     await page.getByRole("button", { name: /Quitar/ }).click();
 
     // Confirmation dialog should appear with the title name
-    await expect(page.getByText(/Past Lives/)).toBeVisible();
-    await page.getByRole("button", { name: "Quitar" }).click();
+    const confirmDialog = page.getByRole("dialog");
+    await expect(confirmDialog).toBeVisible();
+    await expect(confirmDialog.getByText(/Past Lives/)).toBeVisible();
+    await confirmDialog.getByRole("button", { name: "Quitar" }).click();
 
     await expect.poll(() => removeCalled).toBe(true);
     await expect(page.getByText("0 vistas")).toBeVisible();

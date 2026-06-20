@@ -1,13 +1,18 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { LayoutGridIcon, ListIcon, SearchIcon, StarIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageIntro, PosterGridCard, WatchItemRow } from "@/components/watch-ui";
 import { AddToListButton } from "@/components/add-to-list-button";
 import { MediaDetailModal } from "@/components/media-detail-modal";
-import { addListItem, getWatchLists, searchMedia } from "@/lib/watch-api";
-import type { ApiSearchResult, ApiWatchList } from "@/lib/watch-api";
+import {
+  addListItem,
+  getMediaDetails,
+  getWatchLists,
+  searchMedia,
+} from "@/lib/watch-api";
+import type { ApiMediaDetails, ApiSearchResult, ApiWatchList } from "@/lib/watch-api";
 import { itemFromSearchResult } from "@/lib/watch-mappers";
 import { cn } from "@/lib/utils";
 
@@ -93,6 +98,16 @@ export default function SearchPage() {
   const [minRating, setMinRating] = useState(0);
   const [sort, setSort] = useState<SortMode>("relevance");
 
+  const [yearFilter, setYearFilter] = useState<number | null>(null);
+  const [actorFilter, setActorFilter] = useState<string | null>(null);
+  const [providerFilter, setProviderFilter] = useState<string | null>(null);
+
+  const [detailsCache, setDetailsCache] = useState<
+    Record<string, ApiMediaDetails>
+  >({});
+  const [detailsLoading, setDetailsLoading] = useState(false);
+  const detailsFetchedForRef = useRef("");
+
   const [detail, setDetail] = useState<ApiSearchResult | null>(null);
   // Track added titles per (list, title) so the same title can still be added
   // to a different list. Keys look like `${listId}:${result.id}`.
@@ -116,6 +131,68 @@ export default function SearchPage() {
       setSelectedListId(preselected);
     });
   }, []);
+
+  // Reset detail-dependent filters and loading state when the result set changes
+  // so a new search starts clean and any in-flight fetch is treated as stale.
+  useEffect(() => {
+    setDetailsCache({});
+    setDetailsLoading(false);
+    setYearFilter(null);
+    setActorFilter(null);
+    setProviderFilter(null);
+    detailsFetchedForRef.current = "";
+  }, [results]);
+
+  const fetchAllDetails = useCallback(async () => {
+    if (results.length === 0) return;
+    const key = results.map((r) => `${r.mediaType}-${r.id}`).join(",");
+    if (detailsFetchedForRef.current === key) return;
+    detailsFetchedForRef.current = key;
+    setDetailsLoading(true);
+
+    const entries = await Promise.allSettled(
+      results.map(async (result) => {
+        const itemKey = `${result.mediaType}-${result.id}`;
+        const { data } = await getMediaDetails(result.id, result.mediaType);
+        return { key: itemKey, data };
+      }),
+    );
+
+    // Guard against stale responses: if results changed while we were
+    // fetching, the [results] effect already reset the ref. Bail out so we
+    // don't overwrite the cache with data from a previous search.
+    if (detailsFetchedForRef.current !== key) return;
+
+    const cache: Record<string, ApiMediaDetails> = {};
+    for (const entry of entries) {
+      if (entry.status === "fulfilled" && entry.value.data) {
+        cache[entry.value.key] = entry.value.data;
+      }
+    }
+    setDetailsCache(cache);
+    setDetailsLoading(false);
+  }, [results]);
+
+  const yearOptions = useMemo(() => {
+    const years = results.map(resultYear).filter((y): y is number => y > 0);
+    return [...new Set(years)].sort((a, b) => b - a);
+  }, [results]);
+
+  const actorOptions = useMemo(() => {
+    const actors = new Set<string>();
+    for (const details of Object.values(detailsCache)) {
+      for (const name of details.cast) actors.add(name);
+    }
+    return [...actors].sort();
+  }, [detailsCache]);
+
+  const providerOptions = useMemo(() => {
+    const providers = new Set<string>();
+    for (const details of Object.values(detailsCache)) {
+      for (const name of details.providers) providers.add(name);
+    }
+    return [...providers].sort();
+  }, [detailsCache]);
 
   async function handleSearch(event: FormEvent) {
     event.preventDefault();
@@ -158,6 +235,17 @@ export default function SearchPage() {
     const filtered = results.filter((result) => {
       if (typeFilter !== "all" && result.mediaType !== typeFilter) return false;
       if (minRating > 0 && (result.rating ?? 0) < minRating) return false;
+      if (yearFilter && resultYear(result) !== yearFilter) return false;
+      if (actorFilter) {
+        const key = `${result.mediaType}-${result.id}`;
+        const details = detailsCache[key];
+        if (!details || !details.cast.includes(actorFilter)) return false;
+      }
+      if (providerFilter) {
+        const key = `${result.mediaType}-${result.id}`;
+        const details = detailsCache[key];
+        if (!details || !details.providers.includes(providerFilter)) return false;
+      }
       return true;
     });
 
@@ -168,7 +256,7 @@ export default function SearchPage() {
     }
 
     return filtered;
-  }, [results, typeFilter, minRating, sort]);
+  }, [results, typeFilter, minRating, sort, yearFilter, actorFilter, providerFilter, detailsCache]);
 
   return (
     <div className="container flex max-w-4xl flex-col gap-8 py-6 md:py-10">
@@ -278,6 +366,74 @@ export default function SearchPage() {
                 </button>
               ))}
             </div>
+
+            {yearOptions.length > 0 ? (
+              <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                Año
+                <select
+                  value={yearFilter ?? ""}
+                  onChange={(event) =>
+                    setYearFilter(
+                      event.target.value ? Number(event.target.value) : null,
+                    )
+                  }
+                  className="rounded-md border bg-background px-2 py-1 text-foreground"
+                >
+                  <option value="">Todos</option>
+                  {yearOptions.map((year) => (
+                    <option key={year} value={year}>
+                      {year}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ) : null}
+
+            <label className="flex items-center gap-2 text-xs text-muted-foreground">
+              Actor
+              <select
+                value={actorFilter ?? ""}
+                onChange={(event) =>
+                  setActorFilter(event.target.value || null)
+                }
+                onFocus={fetchAllDetails}
+                className="rounded-md border bg-background px-2 py-1 text-foreground"
+              >
+                <option value="">Todos</option>
+                {detailsLoading ? (
+                  <option disabled>Cargando...</option>
+                ) : (
+                  actorOptions.map((actor) => (
+                    <option key={actor} value={actor}>
+                      {actor}
+                    </option>
+                  ))
+                )}
+              </select>
+            </label>
+
+            <label className="flex items-center gap-2 text-xs text-muted-foreground">
+              Plataforma
+              <select
+                value={providerFilter ?? ""}
+                onChange={(event) =>
+                  setProviderFilter(event.target.value || null)
+                }
+                onFocus={fetchAllDetails}
+                className="rounded-md border bg-background px-2 py-1 text-foreground"
+              >
+                <option value="">Todas</option>
+                {detailsLoading ? (
+                  <option disabled>Cargando...</option>
+                ) : (
+                  providerOptions.map((provider) => (
+                    <option key={provider} value={provider}>
+                      {provider}
+                    </option>
+                  ))
+                )}
+              </select>
+            </label>
 
             <label className="flex items-center gap-2 text-xs text-muted-foreground sm:ml-auto">
               Ordenar

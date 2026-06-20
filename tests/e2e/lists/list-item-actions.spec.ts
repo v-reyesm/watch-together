@@ -152,11 +152,6 @@ test.describe("list item actions", () => {
       });
     });
 
-    page.on("dialog", async (dialog) => {
-      expect(dialog.message()).toContain("Past Lives");
-      await dialog.accept();
-    });
-
     await page.goto("/lists?list=5");
 
     await expect(
@@ -169,6 +164,13 @@ test.describe("list item actions", () => {
     await expect(page.getByText("1 pendientes")).toBeVisible();
 
     await page.getByRole("button", { name: /Quitar/ }).click();
+
+    // Confirmation dialog should appear with the title name
+    const confirmDialog = page.getByRole("dialog");
+    await expect(confirmDialog).toBeVisible();
+    await expect(confirmDialog.getByText(/Past Lives/)).toBeVisible();
+    await confirmDialog.getByRole("button", { name: "Quitar" }).click();
+
     await expect.poll(() => removeCalled).toBe(true);
     await expect(page.getByText("0 vistas")).toBeVisible();
   });

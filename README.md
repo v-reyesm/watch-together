@@ -134,6 +134,7 @@ Notes:
 
 - Postgres data is persisted in the `postgres_data` volume.
 - `DATABASE_URL` is wired to the `postgres` service for both frontend and backend containers.
+- The backend applies pending TypeORM migrations automatically on startup.
 
 ## Attribution
 

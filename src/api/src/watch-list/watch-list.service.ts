@@ -5,14 +5,18 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { AddListItemDto } from './dto/add-list-item.dto';
 import { CreateWatchListDto } from './dto/create-watch-list.dto';
 import { UpdateWatchListDto } from './dto/update-watch-list.dto';
+import { UpdateEpisodeProgressDto } from './dto/update-episode-progress.dto';
+import { EpisodeProgress } from './entities/episode-progress.entity';
 import { WatchEvent } from './entities/watch-event.entity';
 import { WatchListMember } from './entities/watch-list-member.entity';
 import { WatchList } from './entities/watch-list.entity';
 import { Media } from '../media/entities/media.entity';
+import { Movie } from '../movies/entities/movie.entity';
+import { TvSerie } from '../tv-series/entities/tv-serie.entity';
 import { User } from '../users/entities/user.entity';
 
 type WatchStatus = 'pending' | 'watchedTogether' | 'watchedAlone';
@@ -33,6 +37,17 @@ type SerializedItem = {
   rating: number;
   status: WatchStatus;
   watchedAt: string | null;
+  runtimeInMinutes?: number | null;
+  numberOfSeasons?: number | null;
+  numberOfEpisodes?: number | null;
+  totalRuntimeInMinutes?: number | null;
+};
+
+type RuntimeData = {
+  runtimeInMinutes?: number | null;
+  numberOfSeasons?: number | null;
+  numberOfEpisodes?: number | null;
+  totalRuntimeInMinutes?: number | null;
 };
 
 @Injectable()
@@ -46,6 +61,12 @@ export class WatchListService {
     private readonly watchEventRepo: Repository<WatchEvent>,
     @InjectRepository(Media)
     private readonly mediaRepo: Repository<Media>,
+    @InjectRepository(Movie)
+    private readonly movieRepo: Repository<Movie>,
+    @InjectRepository(TvSerie)
+    private readonly tvSerieRepo: Repository<TvSerie>,
+    @InjectRepository(EpisodeProgress)
+    private readonly episodeProgressRepo: Repository<EpisodeProgress>,
     @InjectRepository(User)
     private readonly userRepo: Repository<User>,
   ) {}
@@ -74,16 +95,18 @@ export class WatchListService {
   async findAll(userId: number) {
     const memberships = await this.findMembershipsWithListData(userId);
 
-    return memberships.map((membership) =>
-      this.serializeList(membership.watchList, userId, true),
+    return Promise.all(
+      memberships.map((membership) =>
+        this.serializeList(membership.watchList, userId, true),
+      ),
     );
   }
 
   async summary(userId: number) {
     const memberships = await this.findMembershipsWithListData(userId);
     const rawLists = memberships.map((membership) => membership.watchList);
-    const lists = rawLists.map((list) =>
-      this.serializeList(list, userId, true),
+    const lists = await Promise.all(
+      rawLists.map((list) => this.serializeList(list, userId, true)),
     );
     const itemCount = lists.reduce((sum, list) => sum + list.itemCount, 0);
     const watchedCount = lists.reduce(
@@ -236,6 +259,83 @@ export class WatchListService {
     return this.findOne(userId, listId);
   }
 
+  async getEpisodeProgress(userId: number, listId: number, itemId: number) {
+    const list = await this.getAuthorizedList(userId, listId);
+    const media = (list.items ?? []).find((item) => item.id === itemId);
+    if (!media) {
+      throw new NotFoundException('Titulo no encontrado en esta lista');
+    }
+
+    const progress = await this.episodeProgressRepo.findOneBy({
+      watchListId: listId,
+      mediaId: itemId,
+    });
+    const totals = await this.loadSeriesTotals(media);
+
+    return {
+      watchListId: listId,
+      mediaId: itemId,
+      watchedEpisodes: progress?.watchedEpisodes ?? 0,
+      watchedSeasons: progress?.watchedSeasons ?? 0,
+      ...totals,
+    };
+  }
+
+  async updateEpisodeProgress(
+    userId: number,
+    listId: number,
+    itemId: number,
+    dto: UpdateEpisodeProgressDto,
+  ) {
+    const list = await this.getAuthorizedList(userId, listId);
+    const media = (list.items ?? []).find((item) => item.id === itemId);
+    if (!media) {
+      throw new NotFoundException('Titulo no encontrado en esta lista');
+    }
+
+    // Upsert so a concurrent first-write can't violate the (watchListId,
+    // mediaId) unique constraint and surface an unhandled 500. watchedSeasons
+    // is omitted: it defaults to 0 on insert and is left untouched on update.
+    await this.episodeProgressRepo.upsert(
+      {
+        watchListId: listId,
+        mediaId: itemId,
+        watchedEpisodes: dto.watchedEpisodes,
+      },
+      ['watchListId', 'mediaId'],
+    );
+
+    const progress = await this.episodeProgressRepo.findOneBy({
+      watchListId: listId,
+      mediaId: itemId,
+    });
+    const totals = await this.loadSeriesTotals(media);
+
+    return {
+      watchListId: listId,
+      mediaId: itemId,
+      watchedEpisodes: progress?.watchedEpisodes ?? dto.watchedEpisodes,
+      watchedSeasons: progress?.watchedSeasons ?? 0,
+      ...totals,
+    };
+  }
+
+  /**
+   * Load the persisted season/episode/runtime totals for a TV series Media
+   * item from the typed tv_series table. Returns an empty object for movies or
+   * when no data is persisted yet, so callers can spread it conditionally.
+   */
+  private async loadSeriesTotals(media: Media): Promise<RuntimeData> {
+    if (media.mediaType !== 'tv' || !media.tmdbId) return {};
+    const tv = await this.tvSerieRepo.findOneBy({ tmdbId: media.tmdbId });
+    if (!tv) return {};
+    return {
+      numberOfSeasons: tv.numberOfSeasons ?? null,
+      numberOfEpisodes: tv.numberOfEpisodes ?? null,
+      totalRuntimeInMinutes: tv.totalRuntimeInMinutes ?? null,
+    };
+  }
+
   async leave(userId: number, listId: number) {
     const list = await this.getAuthorizedList(userId, listId);
     const membership = list.watchListMembers.find(
@@ -335,9 +435,17 @@ export class WatchListService {
     );
   }
 
-  private serializeList(list: WatchList, userId: number, previewOnly: boolean) {
+  private async serializeList(
+    list: WatchList,
+    userId: number,
+    previewOnly: boolean,
+  ) {
+    // Batch-load runtime data from typed entities so we can include it in
+    // each item without N+1 queries or extra TMDB calls.
+    const runtimeMap = await this.loadRuntimeData(list.items ?? []);
+
     const items = (list.items ?? []).map((item) =>
-      this.serializeItem(item, list.watchEvents ?? [], userId),
+      this.serializeItem(item, list.watchEvents ?? [], userId, runtimeMap),
     );
     const watchedCount = items.filter(
       (item) => item.status !== 'pending',
@@ -366,6 +474,7 @@ export class WatchListService {
     item: Media,
     events: WatchEvent[],
     userId: number,
+    runtimeMap?: Map<number, RuntimeData>,
   ): SerializedItem {
     const itemEvents = events
       .filter((event) => event.mediaId === item.id)
@@ -378,6 +487,8 @@ export class WatchListService {
           ? 'watchedAlone'
           : 'pending'
       : 'pending';
+
+    const runtime = runtimeMap?.get(item.id);
 
     return {
       id: item.id,
@@ -395,7 +506,67 @@ export class WatchListService {
       rating: item.rating ?? 0,
       status,
       watchedAt: latest?.watchedAt.toISOString() ?? null,
+      runtimeInMinutes: runtime?.runtimeInMinutes ?? null,
+      numberOfSeasons: runtime?.numberOfSeasons ?? null,
+      numberOfEpisodes: runtime?.numberOfEpisodes ?? null,
+      totalRuntimeInMinutes: runtime?.totalRuntimeInMinutes ?? null,
     };
+  }
+
+  /**
+   * Batch-load runtime metadata from the typed Movie/TvSerie tables for a set
+   * of Media items. Returns a map keyed by Media.id so the caller can attach
+   * runtime fields during serialization without N+1 queries.
+   */
+  private async loadRuntimeData(
+    items: Media[],
+  ): Promise<Map<number, RuntimeData>> {
+    const map = new Map<number, RuntimeData>();
+    if (items.length === 0) return map;
+
+    const movieTmdbIds = items
+      .filter((i) => i.mediaType === 'movie' && i.tmdbId)
+      .map((i) => i.tmdbId!);
+    const tvTmdbIds = items
+      .filter((i) => i.mediaType === 'tv' && i.tmdbId)
+      .map((i) => i.tmdbId!);
+
+    const [movies, tvSeries]: [Movie[], TvSerie[]] = await Promise.all([
+      movieTmdbIds.length > 0
+        ? this.movieRepo.find({ where: { tmdbId: In(movieTmdbIds) } })
+        : Promise.resolve<Movie[]>([]),
+      tvTmdbIds.length > 0
+        ? this.tvSerieRepo.find({ where: { tmdbId: In(tvTmdbIds) } })
+        : Promise.resolve<TvSerie[]>([]),
+    ]);
+
+    const movieByTmdb = new Map<number, Movie>(
+      movies.map((m): [number, Movie] => [m.tmdbId as number, m]),
+    );
+    const tvByTmdb = new Map<number, TvSerie>(
+      tvSeries.map((t): [number, TvSerie] => [t.tmdbId as number, t]),
+    );
+
+    for (const item of items) {
+      if (item.tmdbId == null) continue;
+      if (item.mediaType === 'movie') {
+        const movie = movieByTmdb.get(item.tmdbId);
+        if (movie?.runtimeInMinutes) {
+          map.set(item.id, { runtimeInMinutes: movie.runtimeInMinutes });
+        }
+      } else if (item.mediaType === 'tv') {
+        const tv = tvByTmdb.get(item.tmdbId);
+        if (tv) {
+          map.set(item.id, {
+            numberOfSeasons: tv.numberOfSeasons ?? null,
+            numberOfEpisodes: tv.numberOfEpisodes ?? null,
+            totalRuntimeInMinutes: tv.totalRuntimeInMinutes ?? null,
+          });
+        }
+      }
+    }
+
+    return map;
   }
 
   private yearFromDate(date: Date | string | null | undefined) {

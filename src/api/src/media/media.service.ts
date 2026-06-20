@@ -76,16 +76,50 @@ export class MediaService {
   }
 
   /**
-   * Resolve extra title metadata (streaming providers, director, top cast)
-   * for a single title via TMDB. Kept out of the search list response so the
-   * list stays a single TMDB call; the frontend fetches this lazily when a
-   * result's detail view is opened.
+   * Resolve extra title metadata (streaming providers, director, top cast,
+   * runtime) for a single title via TMDB. Kept out of the search list
+   * response so the list stays a single TMDB call; the frontend fetches this
+   * lazily when a result's detail view is opened.
+   *
+   * As a side effect, persists runtime/season data to the typed entity so
+   * subsequent cache reads can include it in search results.
    */
   async getDetails(
     id: number,
     mediaType: MediaSearchType,
   ): Promise<MediaExtraDetails> {
-    return this.tmdbService.getMediaDetails(mediaType, id);
+    const details = await this.tmdbService.getMediaDetails(mediaType, id);
+
+    // Persist runtime data to the typed entity for future cache reads.
+    if (mediaType === 'movie' && details.runtimeInMinutes) {
+      const movie = await this.movieRepo.findOneBy({ tmdbId: id });
+      if (movie && !movie.runtimeInMinutes) {
+        movie.runtimeInMinutes = details.runtimeInMinutes;
+        await this.movieRepo.save(movie);
+      }
+    } else if (mediaType === 'tv') {
+      const tvSerie = await this.tvSerieRepo.findOneBy({ tmdbId: id });
+      if (tvSerie) {
+        let changed = false;
+        if (details.numberOfSeasons && !tvSerie.numberOfSeasons) {
+          tvSerie.numberOfSeasons = details.numberOfSeasons;
+          changed = true;
+        }
+        if (details.numberOfEpisodes && !tvSerie.numberOfEpisodes) {
+          tvSerie.numberOfEpisodes = details.numberOfEpisodes;
+          changed = true;
+        }
+        if (details.totalRuntimeInMinutes && !tvSerie.totalRuntimeInMinutes) {
+          tvSerie.totalRuntimeInMinutes = details.totalRuntimeInMinutes;
+          changed = true;
+        }
+        if (changed) {
+          await this.tvSerieRepo.save(tvSerie);
+        }
+      }
+    }
+
+    return details;
   }
 
   private isCacheValid(createdAt: Date): boolean {
@@ -237,7 +271,7 @@ export class MediaService {
     searchType: MediaSearchType,
   ): MediaSearchResult {
     const genreNames = (entity.genres ?? []).map((g) => g.name);
-    return {
+    const result: MediaSearchResult = {
       id: entity.tmdbId ?? entity.id,
       title: entity.title,
       translatedTitle: entity.translatedTitle,
@@ -249,6 +283,20 @@ export class MediaService {
       rating: entity.rating ?? 0,
       mediaType: searchType,
     };
+
+    // Attach runtime fields from the typed entity when available.
+    const typed = entity as Movie & TvSerie;
+    if (searchType === 'movie' && typed.runtimeInMinutes) {
+      result.runtimeInMinutes = typed.runtimeInMinutes;
+    } else if (searchType === 'tv') {
+      if (typed.numberOfSeasons) result.numberOfSeasons = typed.numberOfSeasons;
+      if (typed.numberOfEpisodes)
+        result.numberOfEpisodes = typed.numberOfEpisodes;
+      if (typed.totalRuntimeInMinutes)
+        result.totalRuntimeInMinutes = typed.totalRuntimeInMinutes;
+    }
+
+    return result;
   }
 
   // Search results expose the TMDB id (entityToSearchResult), so public

@@ -5,6 +5,7 @@ import type {
   ApiWatchList,
 } from "@/lib/watch-api";
 import type { Poster, WatchItem, WatchList } from "@/components/watch-ui";
+import { formatRuntime } from "@/lib/format-runtime";
 
 const posterPalette: Poster[] = [
   { bg: "#3a4655", ink: "#f0e6cf", accent: "#d9a05a" },
@@ -82,6 +83,10 @@ export function itemFromSearchResult(
 ): WatchItem {
   const releaseDate = item.releaseDate ? new Date(item.releaseDate) : null;
   const year = releaseDate?.getUTCFullYear();
+  const runtime =
+    item.mediaType === "movie"
+      ? formatRuntime(item.runtimeInMinutes)
+      : formatRuntime(item.totalRuntimeInMinutes);
   return {
     id: `${item.mediaType}-${item.id}`,
     providerId: item.id,
@@ -91,6 +96,7 @@ export function itemFromSearchResult(
     meta: [
       item.mediaType === "tv" ? "Serie" : "Película",
       item.rating ? `★ ${item.rating.toFixed(1)}` : null,
+      runtime,
     ]
       .filter(Boolean)
       .join(" · "),

@@ -13,6 +13,7 @@ import { User } from '../users/entities/user.entity';
 import { WatchList } from '../watch-list/entities/watch-list.entity';
 import { WatchListMember } from '../watch-list/entities/watch-list-member.entity';
 import { WatchEvent } from '../watch-list/entities/watch-event.entity';
+import { EpisodeProgress } from '../watch-list/entities/episode-progress.entity';
 import { Invite } from '../invites/entities/invite.entity';
 import { TmdbSearchCache } from '../media/entities/tmdb-search-cache.entity';
 
@@ -47,6 +48,7 @@ export const AppDataSource = new DataSource({
     WatchList,
     WatchListMember,
     WatchEvent,
+    EpisodeProgress,
     Invite,
     TmdbSearchCache,
   ],

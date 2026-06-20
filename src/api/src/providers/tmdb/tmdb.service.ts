@@ -13,6 +13,8 @@ import {
 } from './dto/tmdb-search-response/tmdb-search-response';
 import {
   TmdbCreditsResponse,
+  TmdbMovieDetailResponse,
+  TmdbTvDetailResponse,
   TmdbWatchProvidersResponse,
   TmdbWatchProviderRegion,
 } from './dto/tmdb-details-response/tmdb-details-response';
@@ -117,10 +119,10 @@ export class TmdbService implements MediaProvider {
   }
 
   /**
-   * Fetch extra metadata (streaming providers, director, top cast) for a
-   * single title. Credits and watch providers are independent TMDB calls,
-   * issued in parallel. Failures degrade gracefully to empty values so the
-   * detail view still renders.
+   * Fetch extra metadata (streaming providers, director, top cast, runtime)
+   * for a single title. Credits, watch providers, and base details are
+   * independent TMDB calls, issued in parallel. Failures degrade gracefully
+   * to empty/null values so the detail view still renders.
    */
   async getMediaDetails(
     mediaType: MediaSearchType,
@@ -132,15 +134,19 @@ export class TmdbService implements MediaProvider {
       language: 'en-US',
     };
 
-    const [credits, watchProviders] = await Promise.all([
+    const [credits, watchProviders, baseDetail] = await Promise.all([
       this.fetchCredits(segment, id, params),
       this.fetchWatchProviders(segment, id, params),
+      this.fetchBaseDetail(segment, id, params),
     ]);
+
+    const runtime = this.extractRuntime(baseDetail, mediaType);
 
     return {
       providers: this.extractProviders(watchProviders),
       director: this.extractDirector(credits, mediaType),
       cast: this.extractCast(credits),
+      ...runtime,
     };
   }
 
@@ -176,6 +182,70 @@ export class TmdbService implements MediaProvider {
         }),
       ),
     );
+  }
+
+  private fetchBaseDetail(
+    segment: string,
+    id: number,
+    params: Record<string, unknown>,
+  ): Promise<TmdbMovieDetailResponse | TmdbTvDetailResponse | null> {
+    const url = `${process.env.TMDB_BASE_URL}/${segment}/${id}`;
+    return firstValueFrom(
+      this.httpService
+        .get<TmdbMovieDetailResponse | TmdbTvDetailResponse>(url, { params })
+        .pipe(
+          map((res) => res.data),
+          catchError((error: Error) => {
+            console.error('TMDB base detail error:', error?.message);
+            return of(null);
+          }),
+        ),
+    );
+  }
+
+  private extractRuntime(
+    detail: TmdbMovieDetailResponse | TmdbTvDetailResponse | null,
+    mediaType: MediaSearchType,
+  ): Pick<
+    MediaExtraDetails,
+    | 'runtimeInMinutes'
+    | 'numberOfSeasons'
+    | 'numberOfEpisodes'
+    | 'totalRuntimeInMinutes'
+  > {
+    if (!detail) {
+      return {};
+    }
+
+    if (mediaType === 'movie') {
+      const movie = detail as TmdbMovieDetailResponse;
+      return {
+        runtimeInMinutes:
+          movie.runtime && movie.runtime > 0 ? movie.runtime : null,
+      };
+    }
+
+    const tv = detail as TmdbTvDetailResponse;
+    const seasons =
+      tv.number_of_seasons && tv.number_of_seasons > 0
+        ? tv.number_of_seasons
+        : null;
+    const episodes =
+      tv.number_of_episodes && tv.number_of_episodes > 0
+        ? tv.number_of_episodes
+        : null;
+    const episodeRuntime =
+      tv.episode_run_time && tv.episode_run_time.length > 0
+        ? tv.episode_run_time[0]
+        : null;
+    const totalRuntime =
+      episodeRuntime && episodes ? episodeRuntime * episodes : null;
+
+    return {
+      numberOfSeasons: seasons,
+      numberOfEpisodes: episodes,
+      totalRuntimeInMinutes: totalRuntime,
+    };
   }
 
   private extractDirector(

@@ -240,7 +240,7 @@ test.describe("invite links", () => {
       /\/sign-in\?next=%2Finvites%2Finvite-token$/,
     );
     await page.getByLabel("Email").fill(user.email);
-    await page.getByLabel("Contraseña").fill("password123");
+    await page.getByLabel("Contraseña", { exact: true }).fill("password123");
     await page.getByRole("button", { name: "Iniciar sesión" }).click();
 
     await expect(page).toHaveURL("/invites/invite-token");

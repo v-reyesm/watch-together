@@ -20,7 +20,7 @@ async function expectSignInPage(page: Page) {
     page.getByText("Ingresa tus credenciales para continuar"),
   ).toBeVisible();
   await expect(page.getByLabel("Email")).toBeVisible();
-  await expect(page.getByLabel("Contraseña")).toBeVisible();
+  await expect(page.getByLabel("Contraseña", { exact: true })).toBeVisible();
   await expect(
     page.getByRole("button", { name: "Iniciar sesión" }),
   ).toBeVisible();
@@ -83,7 +83,7 @@ test.describe("auth", () => {
     await expect(page.getByText("Crear cuenta").first()).toBeVisible();
     await page.getByLabel("Nombre").fill("Ana");
     await page.getByLabel("Email").fill(authUser.email);
-    await page.getByLabel("Contraseña").fill("password123");
+    await page.getByLabel("Contraseña", { exact: true }).fill("password123");
     await page.getByRole("button", { name: "Crear cuenta" }).click();
 
     await expect(page).toHaveURL("/");
@@ -121,7 +121,7 @@ test.describe("auth", () => {
     await page.goto("/sign-in");
     await expectSignInPage(page);
     await page.getByLabel("Email").fill(authUser.email);
-    await page.getByLabel("Contraseña").fill("password123");
+    await page.getByLabel("Contraseña", { exact: true }).fill("password123");
     await page.getByRole("button", { name: "Iniciar sesión" }).click();
 
     await expect(page).toHaveURL("/");
@@ -178,7 +178,7 @@ test.describe("auth", () => {
     await page.goto("/sign-in");
     await expectSignInPage(page);
     await page.getByLabel("Email").fill(authUser.email);
-    await page.getByLabel("Contraseña").fill("password123");
+    await page.getByLabel("Contraseña", { exact: true }).fill("password123");
     await page.getByRole("button", { name: "Iniciar sesión" }).click();
 
     await expect(page).toHaveURL("/");

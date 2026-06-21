@@ -3,9 +3,9 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { PasswordInput } from "@/components/auth/password-input";
 import { PosterBlock, sampleItems, StatusChip } from "@/components/watch-ui";
 import { useAuth } from "@/lib/auth";
 import { apiFetch } from "@/lib/api";
@@ -17,7 +17,6 @@ export default function RegisterPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -125,35 +124,15 @@ export default function RegisterPage() {
               <label htmlFor="password" className="text-sm font-medium">
                 Contraseña
               </label>
-              <div className="relative">
-                <input
-                  id="password"
-                  type={showPassword ? "text" : "password"}
-                  required
-                  minLength={8}
-                  autoComplete="new-password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="border-input bg-background ring-ring/50 focus-visible:ring-ring flex h-9 w-full rounded-md border px-3 py-1 pr-10 text-sm outline-none focus-visible:ring-2"
-                  placeholder="Mínimo 8 caracteres"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword((v) => !v)}
-                  aria-label={
-                    showPassword ? "Ocultar contraseña" : "Mostrar contraseña"
-                  }
-                  aria-pressed={showPassword}
-                  tabIndex={-1}
-                  className="text-muted-foreground hover:text-foreground absolute inset-y-0 right-0 flex items-center px-3"
-                >
-                  {showPassword ? (
-                    <EyeOff className="h-4 w-4" />
-                  ) : (
-                    <Eye className="h-4 w-4" />
-                  )}
-                </button>
-              </div>
+              <PasswordInput
+                id="password"
+                required
+                minLength={8}
+                autoComplete="new-password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Mínimo 8 caracteres"
+              />
             </div>
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? "Registrando..." : "Crear cuenta"}

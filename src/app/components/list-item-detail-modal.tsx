@@ -29,7 +29,6 @@ export function ListItemDetailModal({
   onRemove,
 }: {
   item: ApiWatchItem | null;
-  listId: number;
   onClose: () => void;
   onWatchToggle: (item: ApiWatchItem) => Promise<void>;
   onRemove: (item: ApiWatchItem) => Promise<void>;
@@ -39,19 +38,23 @@ export function ListItemDetailModal({
   const [busy, setBusy] = useState(false);
   const [confirmRemoveOpen, setConfirmRemoveOpen] = useState(false);
 
+  const providerId = item?.providerId ?? null;
+  const mediaType = item?.mediaType;
+
+  // Keyed on providerId/mediaType (not the whole item) so a watch toggle —
+  // which hands us a new item object with the same media — doesn't re-fetch
+  // details and flash the skeleton.
   useEffect(() => {
-    if (!item) {
+    if (!providerId || !mediaType) {
       setDetails(null);
       setDetailsLoading(false);
       return;
     }
 
-    if (!item.providerId) return;
-
     let active = true;
     setDetails(null);
     setDetailsLoading(true);
-    getMediaDetails(item.providerId, item.mediaType)
+    getMediaDetails(providerId, mediaType)
       .then(({ data }) => {
         if (active) setDetails(data);
       })
@@ -62,7 +65,7 @@ export function ListItemDetailModal({
     return () => {
       active = false;
     };
-  }, [item]);
+  }, [providerId, mediaType]);
 
   const open = item != null;
   const isWatched = item ? item.status !== "pending" : false;

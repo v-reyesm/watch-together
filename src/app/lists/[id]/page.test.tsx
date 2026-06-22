@@ -228,6 +228,10 @@ describe("ListDetailPage", () => {
 
     await waitFor(() => expect(markListItemWatched).toHaveBeenCalledWith(7, 10));
     expect(await screen.findByText("0 pendientes")).toBeInTheDocument();
+    // The modal's action button flips in place to the undo label.
+    expect(
+      await screen.findByRole("button", { name: /Marcar como no vista/i }),
+    ).toBeInTheDocument();
     expect(undoLatestWatch).not.toHaveBeenCalled();
   });
 

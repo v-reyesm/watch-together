@@ -120,8 +120,8 @@ export default function ListDetailPage() {
     setError(apiError ?? null);
     if (data) {
       setList(data);
+      setSelectedItem(null);
     }
-    setSelectedItem(null);
   }
 
   function startEditing() {
@@ -455,7 +455,6 @@ export default function ListDetailPage() {
 
         <ListItemDetailModal
           item={selectedItem}
-          listId={list.id}
           onClose={() => setSelectedItem(null)}
           onWatchToggle={handleModalWatchToggle}
           onRemove={handleModalRemove}

@@ -1,8 +1,9 @@
 name: Release & Publish Docker
 
+# Trunk-based development: releases are cut on demand from `main`, not on
+# every push. Trigger this manually from the Actions tab (or via `gh workflow run`).
 on:
-  push:
-    branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: write

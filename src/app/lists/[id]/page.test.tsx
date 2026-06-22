@@ -7,9 +7,11 @@ import "@testing-library/jest-dom";
 import ListDetailPage from "./page";
 import {
   deleteWatchList,
+  getMediaDetails,
   getWatchList,
   leaveWatchList,
   markListItemWatched,
+  removeListItem,
   removeListMember,
   undoLatestWatch,
   updateWatchList,
@@ -34,9 +36,11 @@ jest.mock("@/components/invite-modal", () => ({
 
 jest.mock("@/lib/watch-api", () => ({
   deleteWatchList: jest.fn(),
+  getMediaDetails: jest.fn(),
   getWatchList: jest.fn(),
   leaveWatchList: jest.fn(),
   markListItemWatched: jest.fn(),
+  removeListItem: jest.fn(),
   removeListMember: jest.fn(),
   undoLatestWatch: jest.fn(),
   updateWatchList: jest.fn(),
@@ -69,8 +73,8 @@ const listWithPendingItem = {
       year: 2023,
       posterUrl: "",
       summary: "",
-      overview: "",
-      genres: [],
+      overview: "A touching story.",
+      genres: ["Drama"],
       originalLanguage: "en",
       rating: 7.8,
       status: "pending" as const,
@@ -82,6 +86,9 @@ const listWithPendingItem = {
 describe("ListDetailPage", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    (getMediaDetails as jest.Mock).mockResolvedValue({
+      data: { providers: [], director: null, cast: [] },
+    });
   });
 
   it("loads and renders a list by route id", async () => {
@@ -167,7 +174,27 @@ describe("ListDetailPage", () => {
     );
   });
 
-  it("marks a pending item watched and uses the updated list response", async () => {
+  it("clicking a card opens the detail modal without marking watched", async () => {
+    (getWatchList as jest.Mock).mockResolvedValue({
+      data: listWithPendingItem,
+      status: 200,
+    });
+
+    render(<ListDetailPage />);
+
+    await screen.findByRole("heading", { name: "Noches de viernes" });
+    screen.getByRole("button", { name: /Past Lives/i }).click();
+
+    // The modal should open showing the title and the "Marcar como visto" button
+    expect(
+      await screen.findByRole("button", { name: /Marcar como visto/i }),
+    ).toBeInTheDocument();
+    // Should NOT have called markListItemWatched just from clicking the card
+    expect(markListItemWatched).not.toHaveBeenCalled();
+    expect(undoLatestWatch).not.toHaveBeenCalled();
+  });
+
+  it("marks a pending item watched via the modal button", async () => {
     (getWatchList as jest.Mock).mockResolvedValue({
       data: listWithPendingItem,
       status: 200,
@@ -191,11 +218,104 @@ describe("ListDetailPage", () => {
     render(<ListDetailPage />);
 
     await screen.findByRole("heading", { name: "Noches de viernes" });
+    // Click the card to open the modal
     screen.getByRole("button", { name: /Past Lives/i }).click();
+    // Click "Marcar como visto" inside the modal
+    const watchBtn = await screen.findByRole("button", {
+      name: /Marcar como visto/i,
+    });
+    fireEvent.click(watchBtn);
 
     await waitFor(() => expect(markListItemWatched).toHaveBeenCalledWith(7, 10));
     expect(await screen.findByText("0 pendientes")).toBeInTheDocument();
+    // The modal's action button flips in place to the undo label.
+    expect(
+      await screen.findByRole("button", { name: /Marcar como no vista/i }),
+    ).toBeInTheDocument();
     expect(undoLatestWatch).not.toHaveBeenCalled();
+  });
+
+  it("shows undo button for watched items and undoes via modal", async () => {
+    const watchedList = {
+      ...listWithPendingItem,
+      pendingCount: 0,
+      watchedCount: 1,
+      items: [
+        {
+          ...listWithPendingItem.items[0],
+          status: "watchedTogether" as const,
+          watchedAt: "2026-06-01T00:00:00.000Z",
+        },
+      ],
+    };
+    (getWatchList as jest.Mock).mockResolvedValue({
+      data: watchedList,
+      status: 200,
+    });
+    (undoLatestWatch as jest.Mock).mockResolvedValue({
+      data: listWithPendingItem,
+      status: 200,
+    });
+
+    render(<ListDetailPage />);
+
+    await screen.findByRole("heading", { name: "Noches de viernes" });
+    // Click the card to open the modal
+    screen.getByRole("button", { name: /Past Lives/i }).click();
+    // Should show the undo button since item is already watched
+    const undoBtn = await screen.findByRole("button", {
+      name: /Marcar como no vista/i,
+    });
+    fireEvent.click(undoBtn);
+
+    await waitFor(() => expect(undoLatestWatch).toHaveBeenCalledWith(7, 10));
+    expect(await screen.findByText("1 pendientes")).toBeInTheDocument();
+    expect(markListItemWatched).not.toHaveBeenCalled();
+  });
+
+  it("removes an item via the modal after confirming", async () => {
+    (getWatchList as jest.Mock).mockResolvedValue({
+      data: listWithPendingItem,
+      status: 200,
+    });
+    const emptyList = {
+      ...listWithPendingItem,
+      itemCount: 0,
+      pendingCount: 0,
+      watchedCount: 0,
+      items: [],
+    };
+    (removeListItem as jest.Mock).mockResolvedValue({
+      data: emptyList,
+      status: 200,
+    });
+
+    render(<ListDetailPage />);
+
+    await screen.findByRole("heading", { name: "Noches de viernes" });
+    // Click the card to open the modal
+    screen.getByRole("button", { name: /Past Lives/i }).click();
+
+    // Click "Eliminar" in the modal
+    const removeBtn = await screen.findByRole("button", { name: "Eliminar" });
+    fireEvent.click(removeBtn);
+
+    // Should NOT have called removeListItem yet (confirm dialog is shown)
+    expect(removeListItem).not.toHaveBeenCalled();
+
+    // Confirm the removal in the confirm dialog.
+    // The confirm dialog renders its own "Eliminar" button alongside the modal's,
+    // so we pick the last one (the destructive confirm button).
+    const eliminateBtns = screen.getAllByRole("button", { name: "Eliminar" });
+    fireEvent.click(eliminateBtns[eliminateBtns.length - 1]);
+
+    await waitFor(() => expect(removeListItem).toHaveBeenCalledWith(7, 10));
+    // After removal, the empty state message should appear
+    expect(
+      await screen.findByText(
+        "Esta lista aún no tiene títulos. Agrega uno desde búsqueda.",
+      ),
+    ).toBeInTheDocument();
   });
 
   it("lets the owner rename the list and remove a member", async () => {
@@ -311,37 +431,5 @@ describe("ListDetailPage", () => {
 
     await waitFor(() => expect(leaveWatchList).toHaveBeenCalledWith(7));
     await waitFor(() => expect(pushMock).toHaveBeenCalledWith("/lists"));
-  });
-
-  it("undoes the latest watch event for a watched item", async () => {
-    const watchedList = {
-      ...listWithPendingItem,
-      pendingCount: 0,
-      watchedCount: 1,
-      items: [
-        {
-          ...listWithPendingItem.items[0],
-          status: "watchedTogether" as const,
-          watchedAt: "2026-06-01T00:00:00.000Z",
-        },
-      ],
-    };
-    (getWatchList as jest.Mock).mockResolvedValue({
-      data: watchedList,
-      status: 200,
-    });
-    (undoLatestWatch as jest.Mock).mockResolvedValue({
-      data: listWithPendingItem,
-      status: 200,
-    });
-
-    render(<ListDetailPage />);
-
-    await screen.findByRole("heading", { name: "Noches de viernes" });
-    screen.getByRole("button", { name: /Past Lives/i }).click();
-
-    await waitFor(() => expect(undoLatestWatch).toHaveBeenCalledWith(7, 10));
-    expect(await screen.findByText("1 pendientes")).toBeInTheDocument();
-    expect(markListItemWatched).not.toHaveBeenCalled();
   });
 });

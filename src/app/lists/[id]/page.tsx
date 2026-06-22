@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import {
@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { InviteModal } from "@/components/invite-modal";
+import { ListItemDetailModal } from "@/components/list-item-detail-modal";
 import { EpisodeProgressPanel } from "@/components/episode-progress-panel";
 import {
   ListTabs,
@@ -29,11 +30,12 @@ import {
   getWatchList,
   leaveWatchList,
   markListItemWatched,
+  removeListItem,
   removeListMember,
   undoLatestWatch,
   updateWatchList,
 } from "@/lib/watch-api";
-import type { ApiWatchList } from "@/lib/watch-api";
+import type { ApiWatchItem, ApiWatchList } from "@/lib/watch-api";
 import { itemFromApi } from "@/lib/watch-mappers";
 
 export default function ListDetailPage() {
@@ -51,6 +53,7 @@ export default function ListDetailPage() {
   const [confirmingLeave, setConfirmingLeave] = useState(false);
   const [busy, setBusy] = useState(false);
   const [inviteOpen, setInviteOpen] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<ApiWatchItem | null>(null);
 
   async function loadList() {
     if (!Number.isFinite(listId) || listId <= 0) {
@@ -87,16 +90,37 @@ export default function ListDetailPage() {
     list.members.some((member) => member.id === user.id);
   const canManageInvites = isOwner;
 
-  async function handleToggleWatched(item: WatchItem) {
-    if (!list || !item.numericId) return;
+  const handleSelectItem = useCallback(
+    (item: WatchItem) => {
+      if (!list) return;
+      const apiItem = list.items.find((i) => i.id === item.numericId) ?? null;
+      setSelectedItem(apiItem);
+    },
+    [list],
+  );
+
+  async function handleModalWatchToggle(apiItem: ApiWatchItem) {
+    if (!list) return;
     const request =
-      item.status === "pending"
-        ? markListItemWatched(list.id, item.numericId)
-        : undoLatestWatch(list.id, item.numericId);
+      apiItem.status === "pending"
+        ? markListItemWatched(list.id, apiItem.id)
+        : undoLatestWatch(list.id, apiItem.id);
     const { data, error: apiError } = await request;
     setError(apiError ?? null);
     if (data) {
       setList(data);
+      const updated = data.items.find((i) => i.id === apiItem.id) ?? null;
+      setSelectedItem(updated);
+    }
+  }
+
+  async function handleModalRemove(apiItem: ApiWatchItem) {
+    if (!list) return;
+    const { data, error: apiError } = await removeListItem(list.id, apiItem.id);
+    setError(apiError ?? null);
+    if (data) {
+      setList(data);
+      setSelectedItem(null);
     }
   }
 
@@ -429,6 +453,13 @@ export default function ListDetailPage() {
           listName={list.name}
         />
 
+        <ListItemDetailModal
+          item={selectedItem}
+          onClose={() => setSelectedItem(null)}
+          onWatchToggle={handleModalWatchToggle}
+          onRemove={handleModalRemove}
+        />
+
         {items.length === 0 ? (
           <div className="rounded-lg border bg-card p-4 text-sm text-muted-foreground">
             Esta lista aún no tiene títulos. Agrega uno desde búsqueda.
@@ -439,7 +470,7 @@ export default function ListDetailPage() {
               <div key={item.id} className="flex min-w-0 flex-col gap-2">
                 <PosterGridCard
                   item={item}
-                  onMarkWatched={handleToggleWatched}
+                  onSelect={handleSelectItem}
                 />
                 {item.type === "serie" && item.numericId ? (
                   <EpisodeProgressPanel

@@ -64,7 +64,7 @@ test.describe("list detail route", () => {
     ).toBeVisible();
   });
 
-  test("marks an item as watched from the standalone detail route", async ({
+  test("opens the detail modal and marks an item as watched", async ({
     page,
   }) => {
     await mockAuthenticatedUser(page);
@@ -145,7 +145,14 @@ test.describe("list detail route", () => {
     ).toBeVisible();
     await expect(page.getByText("1 pendientes")).toBeVisible();
 
+    // Clicking the card now opens the detail modal instead of marking watched.
     await page.getByRole("button", { name: /Past Lives/ }).click();
+
+    const dialog = page.getByRole("dialog");
+    await expect(dialog).toBeVisible();
+
+    // The watch action lives inside the modal.
+    await dialog.getByRole("button", { name: "Marcar como visto" }).click();
 
     await expect.poll(() => markWatchedCalled).toBe(true);
     await expect(page.getByText("0 pendientes")).toBeVisible();

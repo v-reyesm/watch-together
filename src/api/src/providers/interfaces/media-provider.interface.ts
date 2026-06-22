@@ -11,6 +11,14 @@ export interface MediaSearchResult {
   originalLanguage: string;
   rating: number;
   mediaType: MediaSearchType;
+  /** Runtime in minutes (movies). */
+  runtimeInMinutes?: number | null;
+  /** Number of seasons (TV). */
+  numberOfSeasons?: number | null;
+  /** Number of episodes (TV). */
+  numberOfEpisodes?: number | null;
+  /** Approximate total runtime in minutes (TV). */
+  totalRuntimeInMinutes?: number | null;
 }
 
 /**
@@ -25,6 +33,14 @@ export interface MediaExtraDetails {
   director: string | null;
   /** Top billed cast member names. */
   cast: string[];
+  /** Runtime in minutes (movies only). */
+  runtimeInMinutes?: number | null;
+  /** Number of seasons (TV only). */
+  numberOfSeasons?: number | null;
+  /** Number of episodes (TV only). */
+  numberOfEpisodes?: number | null;
+  /** Approximate total runtime in minutes (TV only, when episode_run_time is available). */
+  totalRuntimeInMinutes?: number | null;
 }
 
 export interface MediaProvider {

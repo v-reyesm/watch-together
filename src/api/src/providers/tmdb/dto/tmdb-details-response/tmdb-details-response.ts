@@ -37,3 +37,18 @@ export class TmdbWatchProvidersResponse {
   id: number;
   results: Record<string, TmdbWatchProviderRegion>;
 }
+
+/** Shape of the TMDB `/movie/{id}` base detail endpoint. */
+export class TmdbMovieDetailResponse {
+  id: number;
+  runtime?: number | null;
+}
+
+/** Shape of the TMDB `/tv/{id}` base detail endpoint. */
+export class TmdbTvDetailResponse {
+  id: number;
+  number_of_seasons?: number | null;
+  number_of_episodes?: number | null;
+  episode_run_time?: number[];
+  status?: string | null;
+}

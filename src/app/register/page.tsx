@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { PasswordInput } from "@/components/auth/password-input";
 import { PosterBlock, sampleItems, StatusChip } from "@/components/watch-ui";
 import { useAuth } from "@/lib/auth";
 import { apiFetch } from "@/lib/api";
@@ -123,15 +124,13 @@ export default function RegisterPage() {
               <label htmlFor="password" className="text-sm font-medium">
                 Contraseña
               </label>
-              <input
+              <PasswordInput
                 id="password"
-                type="password"
                 required
                 minLength={8}
                 autoComplete="new-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="border-input bg-background ring-ring/50 focus-visible:ring-ring flex h-9 w-full rounded-md border px-3 py-1 text-sm outline-none focus-visible:ring-2"
                 placeholder="Mínimo 8 caracteres"
               />
             </div>

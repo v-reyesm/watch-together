@@ -129,7 +129,7 @@ test.describe("public auth UI", () => {
 
     await expect(page.getByText("Iniciar sesión").first()).toBeVisible();
     await expect(page.getByLabel("Email")).toBeVisible();
-    await expect(page.getByLabel("Contraseña")).toBeVisible();
+    await expect(page.getByLabel("Contraseña", { exact: true })).toBeVisible();
     await expect(page.getByRole("link", { name: "Regístrate" })).toBeVisible();
     await expectNoHorizontalOverflow(page);
 
